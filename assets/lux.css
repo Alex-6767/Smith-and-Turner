@@ -246,3 +246,51 @@ p{font-size:var(--t-body);color:var(--ink-soft);max-width:62ch}
 .about-do__promise{margin-top:2rem;font-size:var(--t-lead);color:var(--ink);max-width:60ch}
 .about-intro{display:grid;gap:clamp(2rem,5vw,4rem);align-items:center}
 @media(min-width:900px){.about-intro{grid-template-columns:1fr 1fr}}
+
+/* =====================================================================
+   v2 — logo size, multi-page, image grids, service images
+   ===================================================================== */
+
+/* larger brand/logo */
+.brand__n{font-size:1.5rem;letter-spacing:.01em}
+.brand__s{font-size:.66rem;letter-spacing:.36em;margin-top:.4rem}
+.hd.scrolled .brand__n{font-size:1.32rem}
+
+/* active nav item */
+.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]::after{width:100%}
+
+/* subpage: push first section clear of the fixed header */
+.section--first{padding-top:clamp(8.5rem,10rem + 6vh,13rem)}
+
+/* contact aside email — smaller, one line */
+.consult__aside a.mail{font-family:var(--mono);font-weight:400;text-transform:none;
+  font-size:clamp(.82rem,.7rem + .5vw,1.02rem);letter-spacing:.01em;color:var(--ink);line-height:1.3;word-break:normal}
+.consult__aside a.mail:hover{color:#000;text-decoration:underline}
+
+/* ---- What We Do: image grid of work areas ---- */
+.workgrid{display:grid;gap:clamp(.9rem,2vw,1.6rem);grid-template-columns:repeat(2,1fr)}
+@media(min-width:720px){.workgrid{grid-template-columns:repeat(3,1fr)}}
+.work{position:relative;display:block;overflow:hidden;background:var(--concrete-3);aspect-ratio:4/3;border:1px solid var(--hair-2)}
+.work img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.02);transition:transform .8s var(--ease),filter .6s}
+.work:hover img{transform:scale(1.045)}
+.work__cap{position:absolute;left:0;right:0;bottom:0;padding:1rem 1.1rem;display:flex;align-items:baseline;gap:.7rem;
+  background:linear-gradient(transparent, rgba(21,22,26,.72));color:#F2F0EA}
+.work__no{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:#cfae8f;opacity:.9}
+.work__ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:clamp(.86rem,.7rem + .5vw,1.05rem);line-height:1.05}
+.about-do__promise{margin-top:clamp(2rem,4vw,3rem)}
+
+/* ---- Services page: image per service ---- */
+.svc-item{grid-template-columns:1fr;gap:1.4rem}
+@media(min-width:900px){.svc-item{grid-template-columns:1.05fr .95fr;gap:3.2rem;align-items:center}}
+.svc-item__text{max-width:60ch}
+.svc-item__img{position:relative;overflow:hidden;background:var(--concrete-3);aspect-ratio:5/4;border:1px solid var(--hair-2)}
+.svc-item__img img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.02);transition:transform .9s var(--ease)}
+.svc-item:hover .svc-item__img img{transform:scale(1.04)}
+@media(min-width:900px){.svc-item:nth-child(even) .svc-item__img{order:-1}}
+
+/* page intro heading block */
+.page-intro{max-width:60rem}
+.page-intro .label{margin-bottom:1.4rem}
+.page-intro h1{font-size:var(--h1);letter-spacing:-.02em}
+.page-intro .lead{margin-top:1.6rem}
