@@ -92,7 +92,8 @@ p{font-size:var(--t-body);color:var(--ink-soft);max-width:62ch}
 .hero{position:relative;min-height:100svh;background:
   radial-gradient(130% 100% at 72% 38%, #C8C6BF 0%, #BEBCB5 45%, #ADABA3 100%);
   color:var(--ink);display:flex;align-items:center;overflow:hidden}
-#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block}
+#hero-gl{position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block}
+.hero__grain{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.08;mix-blend-mode:soft-light;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .hero__fallback{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:flex-end;padding-right:6vw;opacity:.85}
 .hero__fallback svg{width:min(54vw,620px);height:auto}
 .hero__vign{position:absolute;inset:0;z-index:2;pointer-events:none;background:
@@ -103,7 +104,7 @@ p{font-size:var(--t-body);color:var(--ink-soft);max-width:62ch}
 .hero h1{font-size:var(--h1);max-width:15ch;letter-spacing:-.02em}
 .hero h1 .ln{display:block;overflow:hidden}
 .hero h1 .ln > span{display:block;transform:translateY(110%);transition:transform 1.1s var(--ease)}
-.hero h1 em{font-style:normal;color:var(--ink);-webkit-text-stroke:0;opacity:.46} /* tonal emphasis, not colour */
+.hero h1 em{font-style:normal;color:#F4F2EC;text-shadow:0 1px 24px rgba(0,0,0,.16)} /* lighter white-grey */
 .hero__sub{margin-top:2rem;max-width:44ch;color:#26272a;font-size:var(--t-lead);font-weight:400;line-height:1.5;opacity:0;transform:translateY(16px);transition:1s var(--ease) .7s}
 .hero__cta{margin-top:2.8rem;display:flex;flex-wrap:wrap;gap:1rem;opacity:0;transform:translateY(16px);transition:1s var(--ease) .9s}
 .hero.in .hero__eyebrow,.hero.in .hero__sub,.hero.in .hero__cta{opacity:1;transform:none}
