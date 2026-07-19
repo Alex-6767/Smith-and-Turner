@@ -45,14 +45,9 @@
 
   <!-- HERO -->
   <section class="hero" aria-label="Introduction">
-    <canvas id="hero-canvas" aria-hidden="true"></canvas>
-    <div class="hero__fallback" aria-hidden="true">
-      <svg viewBox="0 0 320 200" fill="none" stroke="#15161A" stroke-width="2.4">
-        <path d="M30,170 L30,110 L160,40 L290,110 L290,170 Z"/>
-        <path d="M70,170 L70,120 L110,120 L110,170"/>
-      </svg>
-    </div>
+    <canvas id="hero-gl" aria-hidden="true"></canvas>
     <div class="hero__vign" aria-hidden="true"></div>
+    <div class="hero__grain" aria-hidden="true"></div>
     <div class="wrap hero__in">
       <p class="label hero__eyebrow">Built on expertise and integrity</p>
       <h1>
@@ -138,6 +133,145 @@
     <div class="foot__base">&copy; <span data-year>2026</span> Smith &amp; Turner Construction</div>
   </div>
 </footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+window.addEventListener('load', function(){
+  function fail(m){ if(window.console&&console.warn) console.warn('hero 3D unavailable:', m); }
+  if(!window.THREE){ fail('Three.js did not load'); return; }
+  try{ start(); }catch(e){ fail(e.message); }
+
+  function start(){
+    var THREE=window.THREE;
+    var canvas=document.getElementById('hero-gl');
+    var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+    renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.outputEncoding=THREE.sRGBEncoding;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+    renderer.localClippingEnabled=false;
+
+    var scene=new THREE.Scene();
+    scene.fog=new THREE.Fog(0xBEBCB5, 15, 40);
+
+    var camera=new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+    camera.position.set(11.5, 7.2, 15.5);
+    camera.lookAt(0.6, 2.4, 0);
+
+    scene.add(new THREE.HemisphereLight(0xdfe2e6, 0x9c968a, 0.85));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+    var sun=new THREE.DirectionalLight(0xfff4e2, 2.5);
+    sun.position.set(-9, 15, 9); sun.castShadow=true;
+    sun.shadow.mapSize.width=1024; sun.shadow.mapSize.height=1024;
+    sun.shadow.camera.near=1; sun.shadow.camera.far=60;
+    sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=14; sun.shadow.camera.bottom=-14;
+    sun.shadow.bias=-0.0004; scene.add(sun);
+
+    var MAXA = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
+
+    // ---- procedural (in-browser) textures — subtle micro-surface, used only as bump ----
+    function tex(draw, rx, ry){
+      var c=document.createElement('canvas'); c.width=c.height=256; draw(c.getContext('2d'));
+      var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); t.anisotropy=MAXA; return t;
+    }
+    function fractal(ctx, base, contrast){          // soft cloudy noise
+      ctx.fillStyle='rgb('+base+','+base+','+base+')'; ctx.fillRect(0,0,256,256);
+      [6,12,24,48,96].forEach(function(cells,i){
+        var tm=document.createElement('canvas'); tm.width=tm.height=cells; var tx=tm.getContext('2d');
+        var im=tx.createImageData(cells,cells), amp=contrast/(i+1);
+        for(var p=0;p<cells*cells;p++){ var v=base+(Math.random()*2-1)*amp; im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=v; im.data[p*4+3]=255; }
+        tx.putImageData(im,0,0); ctx.globalAlpha=0.55; ctx.imageSmoothingEnabled=true; ctx.drawImage(tm,0,0,256,256);
+      }); ctx.globalAlpha=1;
+    }
+    var texRender = tex(function(x){ fractal(x,132,26); }, 3,2);       // stucco / render
+    var texConc   = tex(function(x){ fractal(x,128,34); }, 4,3);       // concrete slab
+    var texGround = tex(function(x){ fractal(x,128,30); }, 40,40);
+    var texRoof   = tex(function(x){ fractal(x,130,16); x.strokeStyle='rgba(90,90,90,.35)'; x.lineWidth=2;
+                        for(var y=14;y<256;y+=20){x.beginPath();x.moveTo(0,y);x.lineTo(256,y);x.stroke();} }, 6,10); // shingle lines
+    var texWood   = tex(function(x){ fractal(x,132,10);
+                        for(var i=0;i<70;i++){var yy=Math.random()*256;x.strokeStyle='rgba('+(80+Math.random()*40|0)+','+(70+Math.random()*30|0)+','+(60+Math.random()*30|0)+',.18)';x.lineWidth=1+Math.random()*2;x.beginPath();x.moveTo(0,yy);x.bezierCurveTo(80,yy+(Math.random()*8-4),170,yy+(Math.random()*8-4),256,yy+(Math.random()*10-5));x.stroke();} }, 1,3);
+    var texBrick  = tex(function(x){ fractal(x,134,10); x.strokeStyle='rgba(70,70,70,.4)'; x.lineWidth=2;
+                        var bh=32,bw=64; for(var r=0,y=0;y<256;y+=bh,r++){ x.beginPath();x.moveTo(0,y);x.lineTo(256,y);x.stroke(); var off=(r%2)*bw/2; for(var xx=off;xx<=256;xx+=bw){x.beginPath();x.moveTo(xx,y);x.lineTo(xx,y+bh);x.stroke();} } }, 3,5);
+
+    function M(color, rough, metal, extra){
+      var o={color:new THREE.Color(color), roughness:rough, metalness:metal||0};
+      if(extra) for(var k in extra) o[k]=extra[k];
+      return new THREE.MeshStandardMaterial(o);
+    }
+    var MAT={
+      slab:   M(0xB0ADA4, 0.95, 0, {bumpMap:texConc,   bumpScale:0.03}),
+      render: M(0xC4BEB2, 0.9,  0, {bumpMap:texRender, bumpScale:0.02}),
+      render2:M(0xBAB4A8, 0.9,  0, {bumpMap:texRender, bumpScale:0.02}),
+      roof:   M(0x9A948B, 0.8,  0, {bumpMap:texRoof,   bumpScale:0.03}),
+      glass:  M(0xAEB8B6, 0.12, 0.0, {transparent:true, opacity:0.72}),
+      frame:  M(0x9C8A70, 0.7,  0, {bumpMap:texWood,   bumpScale:0.015}),
+      door:   M(0x87745E, 0.65, 0, {bumpMap:texWood,   bumpScale:0.02}),
+      gdoor:  M(0xB0AA9E, 0.85, 0, {bumpMap:texWood,   bumpScale:0.012}),
+      brick:  M(0xA79A8B, 0.9,  0, {bumpMap:texBrick,  bumpScale:0.035})
+    };
+    var groundTexMat = new THREE.MeshStandardMaterial({color:0xB6B3AA, roughness:1, bumpMap:texGround, bumpScale:0.04});
+
+    var house=new THREE.Group(); house.position.x=1.0; scene.add(house);
+    var parts=[], DROP=0.7;
+    function reg(m, targetY, t0, t1){
+      m.material=m.material.clone(); m.material.transparent=true;
+      m.userData={ty:targetY, t0:t0, t1:t1, fin:m.material.opacity};
+      m.material.opacity=0; m.position.y=targetY-DROP; m.castShadow=false; m.receiveShadow=true;
+      house.add(m); parts.push(m); return m;
+    }
+    function addBox(w,h,d, mat, x,y,z, t0,t1){
+      var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); return reg(m,y,t0,t1);
+    }
+    function addRoof(spanW, depth, height, mat, x, baseY, z, t0,t1){
+      var sh=new THREE.Shape();
+      sh.moveTo(-spanW/2,0); sh.lineTo(spanW/2,0); sh.lineTo(0,height); sh.lineTo(-spanW/2,0);
+      var geo=new THREE.ExtrudeGeometry(sh,{depth:depth,bevelEnabled:false}); geo.translate(0,0,-depth/2);
+      var m=new THREE.Mesh(geo,mat); m.position.set(x,baseY,z); return reg(m,baseY,t0,t1);
+    }
+
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200), groundTexMat);
+    ground.rotation.x=-Math.PI/2; ground.position.y=0; ground.receiveShadow=true; scene.add(ground);
+
+    addBox(7.7,0.4,5.0, MAT.slab,  0.05,0.2,0,      0,   800);   // footings
+    addBox(4.6,3.8,4.4, MAT.render,-1.1,2.3,0,      650, 1650);  // main walls
+    addBox(2.4,2.5,3.4, MAT.render2,2.4,1.65,0.5,   950, 1850);  // garage
+    addBox(5.4,0.14,0.1, MAT.render2,-1.1,4.16,2.55,1650,2200);  // fascia
+    addRoof(5.3,5.1,1.9, MAT.roof, -1.1,4.2,0,      1700,2600);  // main roof
+    addRoof(3.0,4.0,1.0, MAT.roof,  2.4,2.9,0.5,    2000,2800);  // garage roof
+    addBox(0.6,2.0,0.6, MAT.brick, -2.2,5.6,-0.5,   2500,3150);  // chimney
+    addBox(0.9,0.15,0.35, MAT.slab,-2.35,0.45,2.35, 2650,3150);  // threshold
+    addBox(0.7,2.1,0.06, MAT.door, -2.35,1.45,2.21, 2750,3350);  // door
+    function windowF(x,y,t){ addBox(1.2,1.6,0.08, MAT.frame, x,y,2.2, t,t+650); addBox(0.95,1.35,0.03, MAT.glass, x,y,2.25, t+140,t+790); }
+    windowF(-1.05,2.15,2800); windowF(0.5,2.15,2950);
+    addBox(0.08,1.5,1.4, MAT.frame,-3.4,2.1,0, 2900,3550); addBox(0.03,1.25,1.15, MAT.glass,-3.44,2.1,0, 3040,3620);
+    addBox(1.7,1.9,0.06, MAT.gdoor, 2.4,1.35,2.21, 3050,3650);   // garage door
+
+    function resize(){ var r=canvas.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix(); }
+    resize(); window.addEventListener('resize',resize);
+
+    function easeOut(x){ return 1-Math.pow(1-x,3); }
+    function easeInOut(x){ return x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2; }
+    var start=null, last=null, angle=0.35;
+    window.__replay=function(){ start=null; };
+    function tick(t){
+      if(start===null){ start=t; last=t; angle=0.35; }
+      var dt=Math.min(0.05,(t-last)/1000); last=t;
+      var ms=t-start, sec=ms/1000;
+      for(var i=0;i<parts.length;i++){ var m=parts[i], u=m.userData;
+        var lp=(ms-u.t0)/(u.t1-u.t0);
+        if(lp<=0){ m.material.opacity=0; m.position.y=u.ty-DROP; m.castShadow=false; continue; }
+        if(lp>=1){ m.material.opacity=u.fin; m.position.y=u.ty; m.castShadow=true; continue; }
+        var e=easeOut(lp);
+        m.material.opacity=e*u.fin; m.position.y=u.ty-(1-e)*DROP; m.castShadow=e>0.45;
+      }
+      var w=0.05*easeInOut(Math.min(1,sec/1.8));   // gentle eased-in orbit, then steady
+      angle+=w*dt; house.rotation.y=angle;
+      renderer.render(scene,camera);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+});
+</script>
 <script src="assets/lux.js"></script>
 </body>
 </html>
