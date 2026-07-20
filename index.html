@@ -147,24 +147,24 @@ window.addEventListener('load', function(){
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
     renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     renderer.outputEncoding=THREE.sRGBEncoding;
-    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.95;
     renderer.localClippingEnabled=false;
 
     var scene=new THREE.Scene();
-    scene.fog=new THREE.Fog(0xBEBCB5, 15, 40);
+    scene.fog=new THREE.Fog(0xBEBCB5, 11, 27);
 
     var camera=new THREE.PerspectiveCamera(38, 1, 0.1, 200);
     camera.position.set(11.5, 7.2, 15.5);
     camera.lookAt(0.6, 2.4, 0);
 
-    scene.add(new THREE.HemisphereLight(0xdfe2e6, 0x9c968a, 0.85));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.12));
-    var sun=new THREE.DirectionalLight(0xfff4e2, 2.5);
+    scene.add(new THREE.HemisphereLight(0xdfe2e6, 0x9c968a, 1.0));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+    var sun=new THREE.DirectionalLight(0xfff4e2, 1.85);
     sun.position.set(-9, 15, 9); sun.castShadow=true;
     sun.shadow.mapSize.width=1024; sun.shadow.mapSize.height=1024;
     sun.shadow.camera.near=1; sun.shadow.camera.far=60;
     sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=14; sun.shadow.camera.bottom=-14;
-    sun.shadow.bias=-0.0004; scene.add(sun);
+    sun.shadow.bias=-0.0004; sun.shadow.radius=4; scene.add(sun);
 
     var MAXA = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
 
@@ -175,7 +175,7 @@ window.addEventListener('load', function(){
     }
     function fractal(ctx, base, contrast){          // soft cloudy noise
       ctx.fillStyle='rgb('+base+','+base+','+base+')'; ctx.fillRect(0,0,256,256);
-      [6,12,24,48,96].forEach(function(cells,i){
+      [6,12,24,48,96,192].forEach(function(cells,i){
         var tm=document.createElement('canvas'); tm.width=tm.height=cells; var tx=tm.getContext('2d');
         var im=tx.createImageData(cells,cells), amp=contrast/(i+1);
         for(var p=0;p<cells*cells;p++){ var v=base+(Math.random()*2-1)*amp; im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=v; im.data[p*4+3]=255; }
@@ -198,23 +198,23 @@ window.addEventListener('load', function(){
       return new THREE.MeshStandardMaterial(o);
     }
     var MAT={
-      slab:   M(0xB0ADA4, 0.95, 0, {bumpMap:texConc,   bumpScale:0.03}),
-      render: M(0xC4BEB2, 0.9,  0, {bumpMap:texRender, bumpScale:0.02}),
-      render2:M(0xBAB4A8, 0.9,  0, {bumpMap:texRender, bumpScale:0.02}),
-      roof:   M(0x9A948B, 0.8,  0, {bumpMap:texRoof,   bumpScale:0.03}),
-      glass:  M(0xAEB8B6, 0.12, 0.0, {transparent:true, opacity:0.72}),
-      frame:  M(0x9C8A70, 0.7,  0, {bumpMap:texWood,   bumpScale:0.015}),
-      door:   M(0x87745E, 0.65, 0, {bumpMap:texWood,   bumpScale:0.02}),
-      gdoor:  M(0xB0AA9E, 0.85, 0, {bumpMap:texWood,   bumpScale:0.012}),
-      brick:  M(0xA79A8B, 0.9,  0, {bumpMap:texBrick,  bumpScale:0.035})
+      slab:   M(0xA6A093, 0.96, 0, {bumpMap:texConc,   bumpScale:0.05}),
+      render: M(0xB6AF9F, 0.94, 0, {bumpMap:texRender, bumpScale:0.036}),
+      render2:M(0xADA695, 0.94, 0, {bumpMap:texRender, bumpScale:0.036}),
+      roof:   M(0x9C9689, 0.86, 0, {bumpMap:texRoof,   bumpScale:0.052}),
+      glass:  M(0xA5A9A2, 0.16, 0.0, {transparent:true, opacity:0.72}),
+      frame:  M(0x8C8274, 0.75, 0, {bumpMap:texWood,   bumpScale:0.022}),
+      door:   M(0x7E7365, 0.7,  0, {bumpMap:texWood,   bumpScale:0.026}),
+      gdoor:  M(0xACA697, 0.88, 0, {bumpMap:texWood,   bumpScale:0.014}),
+      brick:  M(0x9D9382, 0.92, 0, {bumpMap:texBrick,  bumpScale:0.054})
     };
-    var groundTexMat = new THREE.MeshStandardMaterial({color:0xB6B3AA, roughness:1, bumpMap:texGround, bumpScale:0.04});
+    var groundTexMat = new THREE.MeshStandardMaterial({color:0xB0AC9F, roughness:1, bumpMap:texGround, bumpScale:0.05});
 
     var house=new THREE.Group(); house.position.x=1.0; scene.add(house);
-    var parts=[], DROP=0.7;
+    var parts=[], DROP=0.55, TS=1.2;
     function reg(m, targetY, t0, t1){
       m.material=m.material.clone(); m.material.transparent=true;
-      m.userData={ty:targetY, t0:t0, t1:t1, fin:m.material.opacity};
+      m.userData={ty:targetY, t0:t0*TS, t1:t1*TS, fin:m.material.opacity};
       m.material.opacity=0; m.position.y=targetY-DROP; m.castShadow=false; m.receiveShadow=true;
       house.add(m); parts.push(m); return m;
     }
@@ -250,6 +250,7 @@ window.addEventListener('load', function(){
 
     function easeOut(x){ return 1-Math.pow(1-x,3); }
     function easeInOut(x){ return x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2; }
+    function smooth(x){ return x<=0?0:x>=1?1:x*x*x*(x*(x*6-15)+10); }
     var start=null, last=null, angle=0.35;
     window.__replay=function(){ start=null; };
     function tick(t){
@@ -260,10 +261,10 @@ window.addEventListener('load', function(){
         var lp=(ms-u.t0)/(u.t1-u.t0);
         if(lp<=0){ m.material.opacity=0; m.position.y=u.ty-DROP; m.castShadow=false; continue; }
         if(lp>=1){ m.material.opacity=u.fin; m.position.y=u.ty; m.castShadow=true; continue; }
-        var e=easeOut(lp);
+        var e=smooth(lp);
         m.material.opacity=e*u.fin; m.position.y=u.ty-(1-e)*DROP; m.castShadow=e>0.45;
       }
-      var w=0.05*easeInOut(Math.min(1,sec/1.8));   // gentle eased-in orbit, then steady
+      var w=0.038*smooth(Math.min(1,sec/2.6));   // slower, silkier eased-in orbit
       angle+=w*dt; house.rotation.y=angle;
       renderer.render(scene,camera);
       requestAnimationFrame(tick);
