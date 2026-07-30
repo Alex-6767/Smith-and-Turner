@@ -5,7 +5,7 @@
 // Required environment variable (set in Vercel → Project → Settings → Environment Variables):
 //   RESEND_API_KEY   – your Resend API key (starts with "re_")
 // Optional overrides:
-//   CONTACT_TO       – recipient (default: smithturnerconstruction@gmail.com)
+//   CONTACT_TO       – recipient (default: info@smithandturnerconstruction.com.au)
 //   CONTACT_FROM     – verified sender (default: Resend's shared test sender)
 
 module.exports = async function handler(req, res) {
@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
     }
 
     var apiKey = process.env.RESEND_API_KEY;
-    var TO = process.env.CONTACT_TO || "smithturnerconstruction@gmail.com";
+    var TO = process.env.CONTACT_TO || "info@smithandturnerconstruction.com.au";
     var FROM = process.env.CONTACT_FROM || "Smith & Turner Website <onboarding@resend.dev>";
 
     if (!apiKey) {
