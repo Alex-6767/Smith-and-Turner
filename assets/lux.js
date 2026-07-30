@@ -255,7 +255,7 @@
   }
 
   /* ---------- consultation form ----------
-     Emails enquiries to smithturnerconstruction@gmail.com via Web3Forms.
+     Emails enquiries to info@smithandturnerconstruction.com.au via Web3Forms.
      Configured and live. To change the destination inbox, log in at
      https://web3forms.com and update the address on this access key.
      If the service is ever unreachable, the form falls back to opening a
@@ -276,7 +276,7 @@
 
       var data=new FormData(form), payload={}, lines=[];
       data.forEach(function(v,k){payload[k]=v;lines.push(k+": "+v);});
-      var mail="mailto:smithturnerconstruction@gmail.com?subject="+encodeURIComponent("New enquiry — "+(data.get("name")||""))+"&body="+encodeURIComponent(lines.join("\n"));
+      var mail="mailto:info@smithandturnerconstruction.com.au?subject="+encodeURIComponent("New enquiry — "+(data.get("name")||""))+"&body="+encodeURIComponent(lines.join("\n"));
 
       function reveal(openMail){
         form.style.display="none";
