@@ -218,6 +218,12 @@
       var docH=document.documentElement.scrollHeight-window.innerHeight;
       if(bar) bar.style.transform="scaleX("+(docH>0?y/docH:0)+")";
       if(header) header.classList.toggle("scrolled",y>60);
+      if(hero){
+        // scroll fade: 1 at top -> 0 by ~82% of the first viewport, reversible
+        var vh=window.innerHeight||1;
+        var sf=Math.max(0,Math.min(1,1-(y/(vh*0.82))));
+        hero.style.setProperty("--sf",sf.toFixed(3));
+      }
       if(heroScene) heroScene.setScroll(Math.min(y/window.innerHeight,1.2)*0.6);
       for(var i=0;i<parallax.length;i++){
         var el=parallax[i], sp=parseFloat(el.getAttribute("data-parallax"))||0.1;
