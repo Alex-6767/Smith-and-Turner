@@ -161,8 +161,10 @@ window.addEventListener('load', function(){
     scene.fog=new THREE.Fog(0xBEBCB5, 26, 70);
 
     var camera=new THREE.PerspectiveCamera(38, 1, 0.1, 200);
-    camera.position.set(11.5, 7.2, 15.5);
-    camera.lookAt(0.6, 2.4, 0);
+    var BASE_CAM=new THREE.Vector3(11.5, 7.2, 15.5);
+    var LOOK_AT=new THREE.Vector3(0.6, 2.4, 0);
+    camera.position.copy(BASE_CAM);
+    camera.lookAt(LOOK_AT);
 
     scene.add(new THREE.HemisphereLight(0xdfe2e6, 0x9c968a, 1.05));
     scene.add(new THREE.AmbientLight(0xffffff, 0.24));
@@ -246,7 +248,7 @@ window.addEventListener('load', function(){
     var groundTexMat = new THREE.MeshStandardMaterial({color:0xB0AC9F, roughness:1, bumpMap:texGround, bumpScale:0.085});
 
     var house=new THREE.Group(); house.position.x=1.0; scene.add(house);
-    var parts=[], DROP=0.34, TS=1.22;
+    var parts=[], DROP=0.34, TS=0.72; /* time-scale: lower = faster build (marries the word cascade) */
     function reg(m, targetY, t0, t1, growMode){
       m.material=m.material.clone(); var fin=m.material.opacity;
       if(fin<0.99){ m.material.transparent=true; m.material.opacity=0; } else { m.material.transparent=false; }
@@ -414,7 +416,20 @@ window.addEventListener('load', function(){
     fx(0.06,2.14,0.06, MAT.dpaint, 1.42,1.49,2.345, 5800,6400);
     fx(0.06,2.14,0.06, MAT.dpaint, 3.38,1.49,2.345, 5820,6420);
 
-    function resize(){ var r=canvas.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix(); }
+    function resize(){
+      var r=canvas.getBoundingClientRect();
+      renderer.setSize(r.width,r.height,false);
+      var aspect=r.width/r.height;
+      camera.aspect=aspect;
+      // A fixed vertical FOV crops the wide house horizontally on tall/narrow
+      // phone screens, making it look zoomed-in. On portrait, pull the camera
+      // back and widen the view a touch so the whole build stays framed.
+      var pull=aspect<1 ? Math.min(1.8, 1+(1/aspect-1)*0.62) : 1;
+      camera.position.copy(BASE_CAM.clone().sub(LOOK_AT).multiplyScalar(pull).add(LOOK_AT));
+      camera.fov=aspect<1 ? Math.min(46, 38*(1+(1/aspect-1)*0.10)) : 38;
+      camera.lookAt(LOOK_AT);
+      camera.updateProjectionMatrix();
+    }
     resize(); window.addEventListener('resize',resize);
 
     function easeOut(x){ return 1-Math.pow(1-x,3); }
