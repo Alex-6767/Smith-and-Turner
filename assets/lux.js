@@ -101,7 +101,104 @@
     return { setScroll:function(v){scrollRot=v;}, resize:resize };
   }
 
-  var heroScene = makeScene({canvas:document.getElementById("hero-canvas"),camY:1.5,camZ:7.4,startRotY:-0.6,grid:true});
+  /* ---------- hero: fully-built, shaded, continuously-spinning house ----------
+     No construction/build-on reveal. Spin speeds up as you scroll. Solid faces
+     are shaded by a light vector (so it keeps its shadows) and sit on a soft
+     ground shadow. Greys are drawn from the concrete palette so the canvas
+     blends seamlessly into the page background.                                */
+  function makeHero(canvas){
+    var noop = { setScroll:function(){}, resize:function(){} };
+    if(!canvas) return noop;
+    var ctx = canvas.getContext("2d"); if(!ctx) return noop;
+
+    function box(x0,x1,y0,y1,z0,z1){
+      return [
+        [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],
+        [[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]],
+        [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],
+        [[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0]],
+        [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]],
+        [[x1,y0,z0],[x1,y0,z1],[x1,y1,z1],[x1,y1,z0]]
+      ];
+    }
+    var Wd=3, Dp=2, Hbody=2.4, Ridge=3.7;
+    var faces = box(-Wd,Wd,0,Hbody,-Dp,Dp);
+    faces.push([[-Wd,Hbody,-Dp],[-Wd,Hbody,Dp],[0,Ridge,Dp],[0,Ridge,-Dp]]); // left slope
+    faces.push([[Wd,Hbody,-Dp],[Wd,Hbody,Dp],[0,Ridge,Dp],[0,Ridge,-Dp]]);   // right slope
+    faces.push([[-Wd,Hbody,Dp],[Wd,Hbody,Dp],[0,Ridge,Dp]]);                 // front gable
+    faces.push([[-Wd,Hbody,-Dp],[Wd,Hbody,-Dp],[0,Ridge,-Dp]]);              // back gable
+
+    var LIGHT = nrm([-0.4,0.86,0.42]);
+    function rotY(p,a){var c=Math.cos(a),s=Math.sin(a);return [p[0]*c+p[2]*s,p[1],-p[0]*s+p[2]*c];}
+    function fnorm(f){return nrm(cross(sub(f[1],f[0]),sub(f[2],f[0])));}
+
+    var DPR,Wp,Hp;
+    function resize(){
+      DPR=Math.min(window.devicePixelRatio||1,2);
+      var r=canvas.getBoundingClientRect();
+      Wp=Math.max(1,Math.round(r.width)); Hp=Math.max(1,Math.round(r.height));
+      canvas.width=Wp*DPR; canvas.height=Hp*DPR;
+    }
+    resize(); window.addEventListener("resize",resize);
+
+    function cam(){
+      var narrow = Wp<640;
+      var camZ = narrow ? 10.5 : 13.2;   // closer on phones → house reaches the margins
+      var offX = narrow ? 0 : 2.1;        // nudge right of the text on desktop
+      var C=[offX, narrow?3.0:3.4, camZ], L=[offX, 1.7, 0], up=[0,1,0];
+      var f=nrm(sub(L,C)), r=nrm(cross(f,up)), u=cross(r,f);
+      return {C:C,f:f,r:r,u:u,focal:1/Math.tan(30*Math.PI/180/2),aspect:Wp/Hp};
+    }
+    function proj(p,K){
+      var rel=sub(p,K.C), d=dot(rel,K.f); if(d<=0.02) return null;
+      return [Wp/2+(dot(rel,K.r)/d)*(K.focal/K.aspect)*(Wp/2), Hp/2-(dot(rel,K.u)/d)*K.focal*(Hp/2), d];
+    }
+
+    var ang=-0.6, last=null, speedMult=1, base=reduce?0:0.28; // radians / second
+    function frame(t){
+      if(last===null) last=t;
+      var dt=(t-last)/1000; last=t;
+      if(!reduce){ ang += dt*base*speedMult; speedMult += (1 - speedMult)*Math.min(1,dt*2); }
+      ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,Wp,Hp);
+      var K=cam();
+
+      // soft ground shadow (keeps the house grounded / shadowed)
+      var g0=proj(rotY([0,0.02,0],ang),K);
+      if(g0){
+        var rx=Math.min(Wp,Hp)*0.26, ry=rx*0.26;
+        var gr=ctx.createRadialGradient(g0[0],g0[1],1,g0[0],g0[1],rx);
+        gr.addColorStop(0,"rgba(21,22,26,0.26)"); gr.addColorStop(1,"rgba(21,22,26,0)");
+        ctx.save(); ctx.translate(g0[0],g0[1]); ctx.scale(1,ry/rx);
+        ctx.beginPath(); ctx.arc(0,0,rx,0,Math.PI*2); ctx.fillStyle=gr; ctx.fill(); ctx.restore();
+      }
+
+      // shaded faces, painter-sorted back-to-front
+      var list=[];
+      faces.forEach(function(f){
+        var n=rotY(fnorm(f),ang);
+        var sh=0.42+0.58*Math.max(0,dot(n,LIGHT));      // 0.42 shadow → 1.0 lit
+        var v=Math.round(55+sh*150);                     // ~55..205, drawn from the concrete palette
+        var scr=f.map(function(p){return proj(rotY(p,ang),K);});
+        if(scr.indexOf(null)>=0) return;
+        var depth=0; for(var i=0;i<scr.length;i++) depth+=scr[i][2]; depth/=scr.length;
+        list.push({depth:depth,scr:scr,col:"rgb("+v+","+v+","+(v-2)+")"});
+      });
+      list.sort(function(a,b){return b.depth-a.depth;});
+      list.forEach(function(o){
+        ctx.beginPath(); ctx.moveTo(o.scr[0][0],o.scr[0][1]);
+        for(var i=1;i<o.scr.length;i++) ctx.lineTo(o.scr[i][0],o.scr[i][1]);
+        ctx.closePath(); ctx.fillStyle=o.col; ctx.fill();
+        ctx.lineWidth=1; ctx.strokeStyle="rgba(21,22,26,0.55)"; ctx.lineJoin="round"; ctx.stroke();
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    // scroll makes it spin faster (eased back to idle when you stop scrolling)
+    return { setScroll:function(v){ speedMult = 1 + Math.max(0,v)*3.4; }, resize:resize };
+  }
+
+  var heroScene = makeHero(document.getElementById("hero-gl"));
   if(heroScene){ var fb=document.querySelector(".hero__fallback"); if(fb) fb.style.display="none"; }
   var aboutScene = makeScene({canvas:document.getElementById("about-canvas"),camY:1.5,camZ:6.8,startRotY:0.4,grid:false});
 
@@ -202,9 +299,18 @@
   [].slice.call(document.querySelectorAll("canvas.art[data-art]")).forEach(makeArt);
 
 
-  /* ---------- hero intro ---------- */
+  /* ---------- hero intro (wait for fonts so the reveal is smooth, not jumpy) ---------- */
   var hero=document.querySelector(".hero");
-  if(hero) requestAnimationFrame(function(){setTimeout(function(){hero.classList.add("in");},80);});
+  if(hero){
+    var reveal=function(){ requestAnimationFrame(function(){ hero.classList.add("in"); }); };
+    if(document.fonts && document.fonts.ready){
+      var done=false, go=function(){ if(!done){ done=true; reveal(); } };
+      document.fonts.ready.then(go);
+      setTimeout(go, 1200); // fallback if fonts stall
+    } else {
+      setTimeout(reveal, 80);
+    }
+  }
 
   /* ---------- scroll: progress + parallax + header + hero rot ---------- */
   var header=document.querySelector(".hd");
@@ -218,12 +324,6 @@
       var docH=document.documentElement.scrollHeight-window.innerHeight;
       if(bar) bar.style.transform="scaleX("+(docH>0?y/docH:0)+")";
       if(header) header.classList.toggle("scrolled",y>60);
-      if(hero){
-        // scroll fade: 1 at top -> 0 by ~82% of the first viewport, reversible
-        var vh=window.innerHeight||1;
-        var sf=Math.max(0,Math.min(1,1-(y/(vh*0.82))));
-        hero.style.setProperty("--sf",sf.toFixed(3));
-      }
       if(heroScene) heroScene.setScroll(Math.min(y/window.innerHeight,1.2)*0.6);
       for(var i=0;i<parallax.length;i++){
         var el=parallax[i], sp=parseFloat(el.getAttribute("data-parallax"))||0.1;
