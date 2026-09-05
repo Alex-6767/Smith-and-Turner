@@ -31,20 +31,6 @@
   ::selection{ background:var(--ink); color:var(--concrete); }
   .sheet{ width:100%; max-width:470px; position:relative; padding-bottom:env(safe-area-inset-bottom); }
 
-  /* ---------- HERO (same scene as the website) ---------- */
-  .hero{ position:relative; height:min(52vh,380px); min-height:280px; overflow:hidden;
-    background:var(--concrete); border-bottom:1px solid var(--hair); }
-  #hero-gl{ position:absolute; inset:0; width:100%; height:100%; z-index:1; display:block; }
-  .hero__grain{ position:absolute; inset:0; z-index:2; pointer-events:none; opacity:.08; mix-blend-mode:soft-light;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-  .hero__vign{ position:absolute; inset:0; z-index:2; pointer-events:none;
-    background:radial-gradient(120% 85% at 50% 32%,transparent 60%,rgba(21,22,26,.10) 100%),
-               linear-gradient(to bottom,transparent 55%,rgba(190,188,181,.92) 100%); }
-  .hero__eyebrow{ position:absolute; left:0; right:0; top:18px; z-index:3; text-align:center;
-    font-family:var(--mono); font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:var(--steel); }
-  .hero__fallback{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; padding:0 14%; }
-  .hero__fallback svg{ width:100%; max-width:280px; height:auto; }
-
   /* ---------- IDENTITY ---------- */
   .id{ text-align:center; padding:20px 26px 0; position:relative; z-index:3; margin-top:-26px; }
   .wm{ font-family:var(--display); font-weight:800; text-transform:uppercase;
