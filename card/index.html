@@ -1,1 +1,653 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alex Guerrieri — Smith &amp; Turner Construction</title>
+<meta name="description" content="Alex Guerrieri, Director — Smith &amp; Turner Construction. Building quality, delivering confidence. Sydney, NSW.">
+<meta name="theme-color" content="#BEBCB5">
+<meta property="og:title" content="Alex Guerrieri — Smith &amp; Turner Construction">
+<meta property="og:description" content="Building quality, delivering confidence. Residential &amp; commercial construction, Sydney NSW.">
+<meta property="og:type" content="profile">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23BEBCB5%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22central%22%20font-family%3D%22Archivo%2CArial%20Black%2Csans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2227%22%20fill%3D%22%2315161A%22%3ES%26amp%3BT%3C%2Ftext%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Hanken+Grotesk:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --concrete:#BEBCB5; --concrete-2:#C8C6BF; --concrete-3:#B0AEA6;
+    --ink:#15161A; --ink-soft:#3C3D40; --steel:#6E6E69; --taupe:#7E7A70;
+    --offwhite:#EFEDE7; --hair:rgba(21,22,26,.16); --hair-2:rgba(21,22,26,.28);
+    --display:'Archivo',system-ui,sans-serif;
+    --body:'Hanken Grotesk',system-ui,sans-serif;
+    --mono:'Space Mono',ui-monospace,monospace;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html{ background:var(--concrete); -webkit-text-size-adjust:100%; }
+  body{ font-family:var(--body); background:var(--concrete); color:var(--ink-soft);
+    line-height:1.6; -webkit-font-smoothing:antialiased; display:flex; justify-content:center; }
+  a{ color:inherit; text-decoration:none; }
+  ::selection{ background:var(--ink); color:var(--concrete); }
+  .sheet{ width:100%; max-width:470px; position:relative; padding-bottom:env(safe-area-inset-bottom); }
 
+  /* ---------- HERO (same scene as the website) ---------- */
+  .hero{ position:relative; height:min(52vh,380px); min-height:280px; overflow:hidden;
+    background:var(--concrete); border-bottom:1px solid var(--hair); }
+  #hero-gl{ position:absolute; inset:0; width:100%; height:100%; z-index:1; display:block; }
+  .hero__grain{ position:absolute; inset:0; z-index:2; pointer-events:none; opacity:.08; mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .hero__vign{ position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:radial-gradient(120% 85% at 50% 32%,transparent 60%,rgba(21,22,26,.10) 100%),
+               linear-gradient(to bottom,transparent 55%,rgba(190,188,181,.92) 100%); }
+  .hero__eyebrow{ position:absolute; left:0; right:0; top:18px; z-index:3; text-align:center;
+    font-family:var(--mono); font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:var(--steel); }
+  .hero__fallback{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; padding:0 14%; }
+  .hero__fallback svg{ width:100%; max-width:280px; height:auto; }
+
+  /* ---------- IDENTITY ---------- */
+  .id{ text-align:center; padding:20px 26px 0; position:relative; z-index:3; margin-top:-26px; }
+  .wm{ font-family:var(--display); font-weight:800; text-transform:uppercase;
+    font-size:clamp(23px,7.2vw,31px); line-height:1; letter-spacing:-.014em; color:var(--ink); }
+  .wm .amp{ color:var(--taupe); font-weight:700; }
+  .wm__sub{ font-family:var(--display); font-weight:600; text-transform:uppercase;
+    font-size:9.5px; letter-spacing:.46em; color:var(--steel); margin-top:9px; padding-left:.46em; }
+  .tag{ margin-top:15px; font-size:14px; line-height:1.5; color:var(--ink); }
+  .tag em{ font-style:normal; color:var(--taupe); }
+  .rule{ width:44px; height:1px; background:var(--taupe); margin:22px auto; }
+  .name{ font-family:var(--display); font-weight:800; text-transform:uppercase;
+    font-size:clamp(26px,8.2vw,35px); line-height:1; letter-spacing:-.012em; color:var(--ink); }
+  .role{ font-family:var(--mono); font-size:11px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--taupe); margin-top:11px; }
+
+  /* ---------- BUTTONS ---------- */
+  .btn{ display:flex; align-items:center; justify-content:center; gap:12px; width:100%;
+    background:var(--ink); color:var(--offwhite); border:0; cursor:pointer; font-family:var(--mono);
+    font-size:12px; letter-spacing:.2em; text-transform:uppercase; padding:19px 18px;
+    transition:transform .18s var(--ease), background .18s ease; }
+  .btn:active{ transform:scale(.985); background:#000; }
+  .btn .dot{ width:7px; height:7px; border-radius:50%; background:var(--taupe); flex:0 0 auto; }
+  .btn--line{ background:transparent; color:var(--ink); border:1px solid var(--ink); }
+  .btn--line:active{ background:rgba(21,22,26,.06); }
+  .save{ margin:24px 26px 0; }
+  .share{ margin:12px 26px 0; }
+
+  /* ---------- LINKS ---------- */
+  .links{ padding:26px 26px 0; display:flex; flex-direction:column; gap:11px; }
+  .lab{ font-family:var(--mono); font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--steel); display:flex; align-items:center; gap:11px; margin-bottom:2px; }
+  .lab::after{ content:""; flex:1; height:1px; background:var(--hair); }
+  .link{ display:flex; align-items:center; gap:15px; color:var(--ink); background:var(--concrete-2);
+    border:1px solid var(--hair); padding:15px 16px; transition:transform .18s var(--ease), background .18s ease; }
+  .link:active{ transform:scale(.985); background:#CFCDC6; }
+  .link .ic{ flex:0 0 auto; width:38px; height:38px; border:1px solid var(--ink); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; }
+  .link .ic svg{ width:17px; height:17px; stroke:var(--ink); fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .link .tx{ min-width:0; flex:1; }
+  .link .k{ font-family:var(--mono); font-size:9.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--taupe); margin-bottom:4px; }
+  .link .v{ font-size:15px; line-height:1.25; color:var(--ink); word-break:break-word; }
+  .link .go{ flex:0 0 auto; color:var(--steel); font-size:17px; line-height:1; }
+
+  /* ---------- QR ---------- */
+  .qr-sec{ margin:30px 26px 0; border:1px solid var(--hair); padding:24px 20px; text-align:center; background:var(--concrete-2); }
+  .qr-sec h3{ font-family:var(--mono); font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--steel); font-weight:400; margin-bottom:16px; }
+  .qr-box{ width:180px; height:180px; margin:0 auto; background:var(--offwhite); padding:12px; border:1px solid var(--hair); }
+  .qr-box svg{ display:block; width:100%; height:100%; }
+  .qr-sec p{ margin-top:14px; font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+
+  /* ---------- SERVICES ---------- */
+  .svc{ margin:22px 26px 0; padding:20px 18px; border:1px solid var(--hair); }
+  .svc h3{ font-family:var(--mono); font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--steel); font-weight:400; margin-bottom:14px; text-align:center; }
+  .svc ul{ list-style:none; display:flex; flex-wrap:wrap; justify-content:center; gap:7px 8px; }
+  .svc li{ font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink); border:1px solid var(--hair); padding:7px 10px; }
+
+  /* ---------- FOOTER ---------- */
+  .foot{ margin-top:32px; padding:22px 26px 36px; border-top:1px solid var(--hair); text-align:center; }
+  .foot .fw{ font-family:var(--display); font-weight:800; text-transform:uppercase; font-size:14px; color:var(--ink); }
+  .foot .fw .amp{ color:var(--taupe); }
+  .foot .reg{ margin-top:11px; font-family:var(--mono); font-size:9.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--steel); line-height:1.9; }
+
+  /* ---------- SHARE PANEL ---------- */
+  .modal{ position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:24px; }
+  .modal.open{ display:flex; }
+  .modal__bg{ position:absolute; inset:0; background:rgba(21,22,26,.6); }
+  .modal__in{ position:relative; width:100%; max-width:360px; background:var(--concrete);
+    border:1px solid var(--hair-2); padding:26px 22px; text-align:center; }
+  .modal__in h4{ font-family:var(--display); font-weight:800; text-transform:uppercase; font-size:17px; color:var(--ink); }
+  .modal__in .sub{ font-family:var(--mono); font-size:9.5px; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--taupe); margin-top:8px; }
+  .urlbox{ margin-top:18px; width:100%; font-family:var(--mono); font-size:12px; color:var(--ink);
+    background:var(--offwhite); border:1px solid var(--hair); padding:13px 12px; text-align:center; }
+  .modal .btn{ margin-top:12px; }
+  .modal__x{ margin-top:14px; font-family:var(--mono); font-size:10px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--steel); background:none; border:0; cursor:pointer; padding:8px; }
+
+  .toast{ position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); opacity:0; z-index:90;
+    background:var(--ink); color:var(--offwhite); padding:13px 20px; pointer-events:none;
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    transition:opacity .25s ease, transform .25s ease; }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="hero">
+    <canvas id="hero-gl" aria-hidden="true"></canvas>
+    <div class="hero__fallback" id="hero-fallback" aria-hidden="true">
+      <svg viewBox="0 0 320 200" fill="none" stroke="#15161A" stroke-width="1.5">
+        <path d="M30,170 L30,110 L160,40 L290,110 L290,170 Z"/>
+        <path d="M70,170 L70,120 L110,120 L110,170"/>
+        <path d="M30,110 L290,110" stroke="#45464B" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="hero__vign"></div>
+    <div class="hero__grain"></div>
+    <p class="hero__eyebrow">Built on expertise and integrity</p>
+  </header>
+
+  <section class="id">
+    <div class="wm">Smith <span class="amp">&amp;</span> Turner</div>
+    <div class="wm__sub">Construction</div>
+    <p class="tag">Building <em>quality,</em> delivering <em>confidence.</em></p>
+    <div class="rule"></div>
+    <h1 class="name">Alex Guerrieri</h1>
+    <p class="role">Director</p>
+  </section>
+
+  <div class="save"><button class="btn" id="save-btn"><span class="dot"></span>Save to contacts</button></div>
+  <div class="share"><button class="btn btn--line" id="share-btn"><span class="dot"></span>Share this card</button></div>
+
+  <nav class="links">
+    <p class="lab">Get in touch</p>
+    <a class="link" href="tel:+61424541879">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span>
+      <span class="tx"><span class="k">Call</span><span class="v">0424 541 879</span></span><span class="go">&rsaquo;</span></a>
+    <a class="link" href="sms:+61424541879">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></svg></span>
+      <span class="tx"><span class="k">Text</span><span class="v">Send a message</span></span><span class="go">&rsaquo;</span></a>
+    <a class="link" href="mailto:info@smithandturnerconstruction.com.au">
+      <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 6l9 7 9-7"/></svg></span>
+      <span class="tx"><span class="k">Email</span><span class="v">info@smithandturnerconstruction.com.au</span></span><span class="go">&rsaquo;</span></a>
+
+    <p class="lab" style="margin-top:20px">Follow &amp; explore</p>
+    <a class="link" id="lnk-web" href="https://www.smithandturnerconstruction.com.au" target="_blank" rel="noopener">
+      <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span>
+      <span class="tx"><span class="k">Website</span><span class="v">smithandturnerconstruction.com.au</span></span><span class="go">&rsaquo;</span></a>
+    <a class="link" id="lnk-ig" href="https://instagram.com/smithandturnerconstruction" target="_blank" rel="noopener">
+      <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="#15161A" stroke="none"/></svg></span>
+      <span class="tx"><span class="k">Instagram</span><span class="v" id="ig-handle">@smithandturnerconstruction</span></span><span class="go">&rsaquo;</span></a>
+    <a class="link" href="https://maps.google.com/?q=Sydney+NSW" target="_blank" rel="noopener">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+      <span class="tx"><span class="k">Where we work</span><span class="v">Sydney &amp; NSW</span></span><span class="go">&rsaquo;</span></a>
+  </nav>
+
+  <section class="qr-sec">
+    <h3>Scan to open this card</h3>
+    <div class="qr-box" id="qr-box"></div>
+    <p>Point a phone camera here to open and save the contact.</p>
+  </section>
+
+  <section class="svc">
+    <h3>What we deliver</h3>
+    <ul><li>Residential</li><li>Commercial</li><li>Renovations</li><li>Fitout</li><li>Remediation</li></ul>
+  </section>
+
+  <footer class="foot">
+    <div class="fw">Smith <span class="amp">&amp;</span> Turner Construction</div>
+    <div class="reg">ACN 699 035 053 &middot; ABN 89 699 035 053<br>Sydney, NSW</div>
+  </footer>
+</div>
+
+<div class="modal" id="share-modal">
+  <div class="modal__bg" data-close></div>
+  <div class="modal__in">
+    <h4>Share this card</h4>
+    <p class="sub">Copy the link and send it</p>
+    <div class="urlbox" id="share-url"></div>
+    <button class="btn" id="copy-btn"><span class="dot"></span>Copy link</button>
+    <button class="modal__x" data-close>Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.js"></script>
+<script>
+window.addEventListener('load', function(){
+  function fail(m){ if(window.console&&console.warn) console.warn('hero 3D unavailable:', m); }
+  if(!window.THREE){ fail('Three.js did not load'); return; }
+  try{ start(); }catch(e){ fail(e.message); }
+
+  function start(){
+    var THREE=window.THREE;
+    var canvas=document.getElementById('hero-gl');
+    var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.8));
+    renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.outputEncoding=THREE.sRGBEncoding;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
+    renderer.localClippingEnabled=false;
+    var _fb=document.getElementById('hero-fallback'); if(_fb) _fb.style.display='none';
+
+    var scene=new THREE.Scene();
+    scene.fog=new THREE.Fog(0xBEBCB5, 26, 70);
+
+    var camera=new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+    camera.position.set(11.5, 7.2, 15.5);
+    camera.lookAt(0.6, 2.4, 0);
+
+    scene.add(new THREE.HemisphereLight(0xdfe2e6, 0x9c968a, 1.05));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.24));
+    var sun=new THREE.DirectionalLight(0xfff4e2, 1.45);
+    sun.position.set(-9, 15, 9); sun.castShadow=true;
+    sun.shadow.mapSize.width=1024; sun.shadow.mapSize.height=1024;
+    sun.shadow.camera.near=1; sun.shadow.camera.far=60;
+    sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=14; sun.shadow.camera.bottom=-14;
+    sun.shadow.bias=-0.0004; sun.shadow.radius=7; scene.add(sun);
+
+    var MAXA = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
+
+    // ---- procedural (in-browser) textures — subtle micro-surface, used only as bump ----
+    function tex(draw, rx, ry){
+      var c=document.createElement('canvas'); c.width=c.height=512; draw(c.getContext('2d'));
+      var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); t.anisotropy=MAXA; return t;
+    }
+    function fractal(ctx, base, contrast){
+      ctx.fillStyle='rgb('+base+','+base+','+base+')'; ctx.fillRect(0,0,512,512);
+      [4,8,16,32,64,128,256].forEach(function(cells,i){
+        var tm=document.createElement('canvas'); tm.width=tm.height=cells; var tx=tm.getContext('2d');
+        var im=tx.createImageData(cells,cells), amp=contrast/(i*0.85+1);
+        for(var p=0;p<cells*cells;p++){ var v=base+(Math.random()*2-1)*amp; im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=v; im.data[p*4+3]=255; }
+        tx.putImageData(im,0,0); ctx.globalAlpha=0.5; ctx.imageSmoothingEnabled=true; ctx.drawImage(tm,0,0,512,512);
+      }); ctx.globalAlpha=1;
+    }
+    var texRender = tex(function(x){ fractal(x,134,20);
+      x.globalAlpha=.06; for(var i=0;i<60;i++){var yy=Math.random()*512;x.strokeStyle='#000';x.lineWidth=1;x.beginPath();x.moveTo(0,yy);x.bezierCurveTo(170,yy+(Math.random()*10-5),340,yy+(Math.random()*10-5),512,yy);x.stroke();} x.globalAlpha=1;
+    }, 3,2);
+    var texConc = tex(function(x){ fractal(x,128,24);
+      for(var i=0;i<1500;i++){var g=90+Math.random()*95;x.fillStyle='rgba('+g+','+g+','+g+','+(0.14+Math.random()*0.24)+')';x.beginPath();x.arc(Math.random()*512,Math.random()*512,1+Math.random()*2.4,0,7);x.fill();}
+    }, 4,3);
+    var texGround = tex(function(x){ fractal(x,128,24); }, 44,44);
+    var texRoof = tex(function(x){ fractal(x,132,8);
+      var tw=58,th=30;
+      for(var row=0,y=-8;y<512;y+=th,row++){ var off=(row%2)*tw/2;
+        for(var t0=off-tw;t0<512+tw;t0+=tw){
+          var v=Math.random()*16-8; x.fillStyle='rgba('+(128+v)+','+(128+v)+','+(128+v)+',0.5)'; x.fillRect(t0+2,y+2,tw-4,th-4);
+          x.strokeStyle='rgba(55,55,55,0.55)'; x.lineWidth=2.5; x.beginPath(); x.moveTo(t0,y+th); x.lineTo(t0+tw,y+th); x.stroke();
+          x.strokeStyle='rgba(70,70,70,0.3)'; x.lineWidth=1.5; x.beginPath(); x.moveTo(t0,y); x.lineTo(t0,y+th); x.stroke();
+          x.strokeStyle='rgba(255,255,255,0.10)'; x.beginPath(); x.moveTo(t0+2,y+3); x.lineTo(t0+tw-2,y+3); x.stroke();
+        }
+      }
+    }, 5,8);
+    var texWood = tex(function(x){ fractal(x,134,8);
+      for(var i=0;i<120;i++){var yy=Math.random()*512;var a=0.10+Math.random()*0.14;x.strokeStyle='rgba(70,58,44,'+a+')';x.lineWidth=1+Math.random()*2;x.beginPath();x.moveTo(0,yy);x.bezierCurveTo(170,yy+(Math.random()*12-6),340,yy+(Math.random()*12-6),512,yy+(Math.random()*14-7));x.stroke();}
+      for(var k=0;k<4;k++){var kx=Math.random()*512,ky=Math.random()*512;for(var rr=2;rr<16;rr+=2){x.strokeStyle='rgba(60,48,36,0.16)';x.beginPath();x.ellipse(kx,ky,rr,rr*0.6,0,0,7);x.stroke();}}
+    }, 1,3);
+    var texBrick = tex(function(x){ fractal(x,134,8);
+      var bh=24,bw=50;
+      for(var row=0,y=0;y<512;y+=bh,row++){ var off=(row%2)*bw/2;
+        for(var bx=off-bw;bx<512+bw;bx+=bw){ var v=Math.random()*20-10; x.fillStyle='rgba('+(140+v)+','+(132+v)+','+(122+v)+',0.35)'; x.fillRect(bx+2,y+2,bw-4,bh-4); }
+        x.strokeStyle='rgba(70,70,70,0.5)'; x.lineWidth=3; x.beginPath(); x.moveTo(0,y); x.lineTo(512,y); x.stroke();
+        for(var b2=off;b2<=512;b2+=bw){ x.beginPath(); x.moveTo(b2,y); x.lineTo(b2,y+bh); x.stroke(); }
+      }
+    }, 3,5);
+
+    function M(color, rough, metal, extra){
+      var o={color:new THREE.Color(color), roughness:rough, metalness:metal||0};
+      if(extra) for(var k in extra) o[k]=extra[k];
+      return new THREE.MeshStandardMaterial(o);
+    }
+    var MAT={
+      slab:   M(0x8C8A84, 0.95, 0, {bumpMap:texConc,   bumpScale:0.085}),
+      timber: M(0x8F6A3E, 0.72, 0, {bumpMap:texWood,   bumpScale:0.045}),
+      plaster:M(0xCFC8BC, 0.95, 0, {bumpMap:texRender, bumpScale:0.02}),
+      render: M(0xC2BCAF, 0.95, 0, {bumpMap:texRender, bumpScale:0.075}),
+      render2:M(0xBAB4A7, 0.95, 0, {bumpMap:texRender, bumpScale:0.075}),
+      roof:   M(0x8E8A81, 0.86, 0, {bumpMap:texRoof,   bumpScale:0.085}),
+      glass:  M(0xB0B2AE, 0.20, 0.06, {transparent:true, opacity:0.52}),
+      frame:  M(0x7E7365, 0.75, 0, {bumpMap:texWood,   bumpScale:0.032}),
+      door:   M(0x6E6559, 0.70, 0, {bumpMap:texWood,   bumpScale:0.038}),
+      gdoor:  M(0xB2ACA0, 0.90, 0, {bumpMap:texWood,   bumpScale:0.014}),
+      brick:  M(0xACA394, 0.92, 0, {bumpMap:texBrick,  bumpScale:0.085}),
+      alu:    M(0x9E9A92, 0.55, 0.10),
+      cavity: M(0xA09C94, 0.94, 0),
+      dpaint: M(0xA9A39A, 0.72, 0, {bumpMap:texWood,  bumpScale:0.018}),
+      sillC:  M(0xB8B2A8, 0.92, 0, {bumpMap:texConc,   bumpScale:0.045}),
+      reveal: M(0xC8C2B6, 0.94, 0, {bumpMap:texRender, bumpScale:0.035})
+    };
+    var groundTexMat = new THREE.MeshStandardMaterial({color:0xB0AC9F, roughness:1, bumpMap:texGround, bumpScale:0.085});
+
+    var house=new THREE.Group(); house.position.x=1.0; scene.add(house);
+    var parts=[], DROP=0.34, TS=1.22;
+    function reg(m, targetY, t0, t1, growMode){
+      m.material=m.material.clone(); var fin=m.material.opacity;
+      if(fin<0.99){ m.material.transparent=true; m.material.opacity=0; } else { m.material.transparent=false; }
+      m.geometry.computeBoundingBox();
+      var minY=m.geometry.boundingBox.min.y, maxY=m.geometry.boundingBox.max.y;
+      m.userData={ty:targetY, t0:t0*TS, t1:t1*TS, fin:fin, minY:minY, maxY:maxY, grow:(growMode||'base')};
+      m.position.y=targetY; m.scale.y=0.0001; m.visible=false; m.castShadow=false; m.receiveShadow=true;
+      house.add(m); parts.push(m); return m;
+    }
+    var _rbCache={};
+    function roundedBox(w,h,d){
+      var r=Math.min(0.055, w*0.34, h*0.34, d*0.34);
+      if(!(r>0.006)) return new THREE.BoxGeometry(w,h,d);
+      var key=w.toFixed(3)+'_'+h.toFixed(3)+'_'+d.toFixed(3);
+      if(_rbCache[key]) return _rbCache[key];
+      var s=new THREE.Shape();
+      s.moveTo(-w/2+r,-h/2);
+      s.lineTo(w/2-r,-h/2); s.absarc(w/2-r,-h/2+r,r,-Math.PI/2,0,false);
+      s.lineTo(w/2,h/2-r);  s.absarc(w/2-r,h/2-r,r,0,Math.PI/2,false);
+      s.lineTo(-w/2+r,h/2); s.absarc(-w/2+r,h/2-r,r,Math.PI/2,Math.PI,false);
+      s.lineTo(-w/2,-h/2+r);s.absarc(-w/2+r,-h/2+r,r,Math.PI,Math.PI*1.5,false);
+      var g=new THREE.ExtrudeGeometry(s,{depth:d-2*r,bevelEnabled:true,bevelThickness:r,bevelSize:r,bevelSegments:2,curveSegments:2,steps:1});
+      g.center(); g.computeVertexNormals(); _rbCache[key]=g; return g;
+    }
+    function addBox(w,h,d, mat, x,y,z, t0,t1){
+      var m=new THREE.Mesh(roundedBox(w,h,d), mat); m.position.set(x,y,z); return reg(m,y,t0,t1);
+    }
+    function addRoof(spanW, depth, height, mat, x, baseY, z, t0,t1){
+      var t=0.34, sh=new THREE.Shape();
+      sh.moveTo(-spanW/2,-t); sh.lineTo(spanW/2,-t); sh.lineTo(spanW/2,0); sh.lineTo(0,height);
+      sh.lineTo(-spanW/2,0); sh.lineTo(-spanW/2,-t);
+      var geo=new THREE.ExtrudeGeometry(sh,{depth:depth,bevelEnabled:false}); geo.translate(0,0,-depth/2);
+      var m=new THREE.Mesh(geo,mat); m.position.set(x,baseY,z); return reg(m,baseY,t0,t1,'top');
+    }
+
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200), groundTexMat);
+    ground.rotation.x=-Math.PI/2; ground.position.y=0; ground.receiveShadow=true; scene.add(ground);
+
+    // ---------- helpers ----------
+    function stud(x,z,y0,y1,t0,t1){ addBox(0.09,y1-y0,0.09, MAT.timber, x,(y0+y1)/2,z, t0,t1).userData.noShadow=true; }
+    function beamX(x0,x1,y,z,t0,t1){ addBox(x1-x0,0.11,0.11, MAT.timber,(x0+x1)/2,y,z, t0,t1).userData.noShadow=true; }
+    function beamZ(z0,z1,y,x,t0,t1){ addBox(0.11,0.11,z1-z0, MAT.timber, x,y,(z0+z1)/2, t0,t1).userData.noShadow=true; }
+    function bar(ax,ay,az,bx,by,bz,t0,t1){
+      var dx=bx-ax,dy=by-ay,dz=bz-az,len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+      var mesh=new THREE.Mesh(roundedBox(0.09,len,0.09), MAT.timber);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(dx,dy,dz).normalize());
+      mesh.position.set((ax+bx)/2,(ay+by)/2,(az+bz)/2); reg(mesh, mesh.position.y, t0, t1, 'center'); mesh.userData.noShadow=true;
+    }
+    function sheets(axis,fixed,a0,a1,y0,y1,off,mat,t0,dt){
+      var n=Math.max(1,Math.round((a1-a0)/1.3)), w=(a1-a0)/n;
+      for(var i=0;i<n;i++){ var m=a0+i*w+w/2, t=t0+i*dt;
+        if(axis==='x') addBox(w+0.02,y1-y0,0.16, mat, m,(y0+y1)/2,fixed+off, t,t+1000);
+        else           addBox(0.16,y1-y0,w+0.02, mat, fixed+off,(y0+y1)/2,m, t,t+1000); }
+    }
+    // ---------- 1) SLAB ----------
+    addBox(7.7,0.4,5.0, MAT.slab, 0.05,0.2,0, 0,850);
+    // ---------- 2) FRAMING (external + internal studs + trusses) ----------
+    // ---------- 2) WALL FRAMING (full: studs + plates + noggins + joists) ----------
+    var wA=820,wB=2000;
+    var FOPEN=[{x0:-2.81,x1:-1.89,y0:0.42,y1:2.55},{x0:-0.85,x1:0.45,y0:1.28,y1:2.83}];
+    function beamXSeg(x0,x1,y,z,t0,t1,list){
+      var segs=[[x0,x1]];
+      for(var i=0;i<list.length;i++){ var o=list[i];
+        if(y>o.y0-0.03 && y<o.y1+0.03){
+          var ns=[];
+          for(var j=0;j<segs.length;j++){ var s=segs[j];
+            if(o.x1<=s[0]||o.x0>=s[1]){ ns.push(s); continue; }
+            if(s[0]<o.x0) ns.push([s[0],o.x0]);
+            if(s[1]>o.x1) ns.push([o.x1,s[1]]);
+          }
+          segs=ns;
+        }
+      }
+      for(var k=0;k<segs.length;k++){ if(segs[k][1]-segs[k][0]>0.08) beamX(segs[k][0],segs[k][1],y,z,t0,t1); }
+    }
+    function fx(w,h,d,mat,x,y,z,t0,t1){ var m=addBox(w,h,d,mat,x,y,z,t0,t1); m.userData.grow='none'; return m; }
+    function studOpen(x,z,y0,y1,t0,t1,list){
+      var o=null;
+      for(var i=0;i<list.length;i++){ if(x>list[i].x0-0.03 && x<list[i].x1+0.03){ o=list[i]; break; } }
+      if(!o){ stud(x,z,y0,y1,t0,t1); return; }
+      if(o.y0-y0>0.16) stud(x,z,y0,o.y0,t0,t1);
+      if(y1-o.y1>0.16) stud(x,z,o.y1,y1,t0,t1);
+    }
+    for(var sx=-3.3;sx<=1.2;sx+=0.46){ studOpen(sx,2.15,0.42,4.2,wA,wB,FOPEN); stud(sx,-2.15,0.42,4.2,wA,wB); }
+    for(var oi=0;oi<FOPEN.length;oi++){ var o=FOPEN[oi];
+      stud(o.x0-0.07,2.15,0.42,4.2,wA+40,wB); stud(o.x1+0.07,2.15,0.42,4.2,wA+40,wB);
+      stud(o.x0+0.06,2.15,0.42,o.y1,wA+60,wB); stud(o.x1-0.06,2.15,0.42,o.y1,wA+60,wB);
+      beamX(o.x0-0.12,o.x1+0.12,o.y1+0.07,2.15,wA+80,wB);
+      if(o.y0>0.6) beamX(o.x0-0.12,o.x1+0.12,o.y0-0.07,2.15,wA+80,wB);
+    }
+    for(var sz=-1.9;sz<=1.91;sz+=0.5){ stud(-3.35,sz,0.42,4.2,wA,wB); stud(1.15,sz,0.42,4.2,wA,wB); }
+    beamXSeg(-3.4,1.2,0.47,2.15,wA,wB,FOPEN); beamX(-3.4,1.2,4.15,2.15,wA,wB); beamX(-3.4,1.2,0.47,-2.15,wA,wB); beamX(-3.4,1.2,4.15,-2.15,wA,wB);
+    beamZ(-2.15,2.15,0.47,-3.35,wA,wB); beamZ(-2.15,2.15,4.15,-3.35,wA,wB); beamZ(-2.15,2.15,0.47,1.15,wA,wB); beamZ(-2.15,2.15,4.15,1.15,wA,wB);
+    beamXSeg(-3.4,1.2,1.7,2.15,wA+130,wB,FOPEN); beamXSeg(-3.4,1.2,2.9,2.15,wA+130,wB,FOPEN); beamX(-3.4,1.2,1.7,-2.15,wA+130,wB); beamX(-3.4,1.2,2.9,-2.15,wA+130,wB);
+    beamZ(-2.15,2.15,1.7,-3.35,wA+130,wB); beamZ(-2.15,2.15,2.9,-3.35,wA+130,wB); beamZ(-2.15,2.15,1.7,1.15,wA+130,wB); beamZ(-2.15,2.15,2.9,1.15,wA+130,wB);
+    for(var jz=-1.8;jz<=1.81;jz+=0.5){ beamX(-3.4,1.2,4.15,jz,wA+70,wB); }
+    for(var pz=-2.0;pz<=2.01;pz+=0.46){ if(Math.abs(pz)<0.5) continue; stud(-1.2,pz,0.42,4.15,wA+120,wB); }
+    beamZ(-2.15,2.15,0.47,-1.2,wA+120,wB); beamZ(-2.15,2.15,4.1,-1.2,wA+120,wB); beamZ(-2.15,2.15,2.3,-1.2,wA+150,wB);
+    for(var px=-3.0;px<=-1.3;px+=0.46){ stud(px,0.4,0.42,4.15,wA+150,wB); }
+    beamX(-3.35,-1.2,0.47,0.4,wA+150,wB); beamX(-3.35,-1.2,4.1,0.4,wA+150,wB); beamX(-3.35,-1.2,2.3,0.4,wA+170,wB);
+    var GO={x0:1.45,x1:3.35,y0:0.42,y1:2.50};
+    for(var gx=1.4;gx<=3.55;gx+=0.5){
+      if(gx>GO.x0-0.03 && gx<GO.x1+0.03){ if(2.9-GO.y1>0.16) stud(gx,2.15,GO.y1,2.9,wA+120,wB); }
+      else { stud(gx,2.15,0.42,2.9,wA+120,wB); }
+      stud(gx,-1.15,0.42,2.9,wA+120,wB);
+    }
+    stud(GO.x0-0.07,2.15,0.42,2.9,wA+140,wB); stud(GO.x1+0.07,2.15,0.42,2.9,wA+140,wB);
+    beamX(GO.x0-0.12,GO.x1+0.12,GO.y1+0.07,2.15,wA+160,wB);   // garage lintel
+    stud(3.55,0.5,0.42,2.9,wA+120,wB); stud(3.55,-0.5,0.42,2.9,wA+120,wB);
+    beamX(1.2,3.6,2.85,2.15,wA+120,wB); beamX(1.2,3.6,2.85,-1.15,wA+120,wB); beamXSeg(1.2,3.6,1.6,2.15,wA+140,wB,[GO]); beamX(1.2,3.6,1.6,-1.15,wA+140,wB);
+    beamXSeg(1.2,3.6,0.47,2.15,wA+120,wB,[GO]); beamX(1.2,3.6,0.47,-1.15,wA+120,wB); beamZ(-1.15,2.15,2.85,3.55,wA+130,wB); beamZ(-1.15,2.15,0.47,3.55,wA+130,wB);
+    // ---------- 3) ROOF FRAMING (only after the walls are framed) ----------
+    var gA=2000,gB=2900;
+    bar(-1.1,5.70,-2.15,-1.1,5.70,2.15,gA,gB);
+    for(var rz=-1.95;rz<=1.96;rz+=0.55){ bar(-3.25,4.15,rz,-1.1,5.70,rz,gA+90,gB); bar(1.05,4.15,rz,-1.1,5.70,rz,gA+90,gB); }
+    for(var cz=-1.6;cz<=1.61;cz+=0.8){ bar(-2.0,5.1,cz,0.0,5.1,cz,gA+180,gB); }  // collar ties
+    for(var gsx=-2.6;gsx<=0.46;gsx+=0.5){ var tf=4.15+1.45*(1-Math.abs(gsx+1.1)/2.2); if(tf>4.5){ stud(gsx,2.05,4.1,tf,gA+150,gB); stud(gsx,-2.05,4.1,tf,gA+150,gB); } }  // gable infill
+    bar(2.4,3.58,-1.05,2.4,3.58,2.05,gA+140,gB);
+    for(var grz=-0.8;grz<=1.91;grz+=0.6){ bar(1.25,2.80,grz,2.4,3.58,grz,gA+170,gB); bar(3.55,2.80,grz,2.4,3.58,grz,gA+170,gB); }
+    bar(1.25,2.80,-1.05,2.4,3.58,-1.05,gA+180,gB); bar(3.55,2.80,-1.05,2.4,3.58,-1.05,gA+180,gB);  // rear gable rafters (matching pitch)
+    bar(1.25,2.80,2.05,2.4,3.58,2.05,gA+180,gB);  bar(3.55,2.80,2.05,2.4,3.58,2.05,gA+180,gB);   // front gable rafters (matching pitch)
+    // ---------- 4) EXTERNAL CLADDING (glides on) ----------
+    var eA=2950,edt=80;
+    sheets('x',2.15,-3.45,1.25,0.4,4.2,0.10,  MAT.render, eA,     edt);
+    sheets('z',1.15,-2.2,2.2,0.4,4.2,0.10,    MAT.render, eA+230, edt);
+    sheets('z',-3.35,-2.2,2.2,0.4,4.2,-0.10,  MAT.render, eA+470, edt);
+    sheets('x',-2.15,-3.45,1.25,0.4,4.2,-0.10,MAT.render, eA+690, edt);
+    // solid wall mass seals the frame in (nothing can show through)
+    addBox(4.75,3.82,4.55, MAT.render, -1.1,2.31,0, eA+760, eA+1500);
+    addBox(2.55,2.55,3.55, MAT.render2, 2.4,1.67,0.5, eA+820, eA+1560);
+    addBox(5.4,0.14,0.1, MAT.render2,-1.1,4.16,2.6, eA+900,eA+1500);
+    // ---------- 5) ROOFING (solid, covers the frame) ----------
+    addRoof(6.16,5.88,1.99, MAT.timber,-1.1,4.20,0, 4150,4900);   // roof sheeting (main)
+    addRoof(3.56,4.58,1.10, MAT.timber, 2.4,2.88,0.5, 4400,5050);  // roof sheeting (garage)
+    addRoof(6.3,6.0,2.05, MAT.roof,-1.1,4.18,0, 4700,5450);        // roof covering (main)
+    addRoof(3.7,4.7,1.15, MAT.roof, 2.4,2.86,0.5, 4950,5650);      // roof covering (garage)
+    // ---------- 6) FIT-OFF ----------
+    addBox(0.6,2.0,0.6, MAT.brick,-2.2,5.6,-0.5, 5450,6050);   // chimney
+    addBox(1.05,0.16,0.5, MAT.slab,-2.35,0.46,2.44, 5500,6000); // entry step
+    // ---- FRONT DOOR (static, muted) ----
+    fx(1.02,2.30,0.035, MAT.reveal,-2.35,1.50,2.335, 5520,6120);
+    fx(0.88,2.14,0.02,  MAT.cavity,-2.35,1.47,2.352, 5550,6150);
+    fx(0.06,2.24,0.06,  MAT.dpaint,-2.76,1.50,2.372, 5580,6180);
+    fx(0.06,2.24,0.06,  MAT.dpaint,-1.94,1.50,2.372, 5600,6200);
+    fx(0.90,0.06,0.06,  MAT.dpaint,-2.35,2.59,2.372, 5620,6220);
+    fx(0.78,2.12,0.05,  MAT.dpaint,-2.35,1.46,2.370, 5660,6260);
+    fx(0.04,0.16,0.05,  MAT.alu,   -2.03,1.42,2.400, 5760,6320);
+    // ---- ONE CENTRAL WINDOW (static, muted) ----
+    (function(){ var wx=-0.20, wy=2.05, w=1.30, h=1.55, t=5560;
+      fx(w+0.16,h+0.16,0.035, MAT.reveal, wx,wy,2.335, t,     t+780);
+      fx(w-0.02,h-0.02,0.02,  MAT.cavity, wx,wy,2.352, t+50,  t+820);
+      fx(w-0.05,h-0.05,0.025, MAT.glass,  wx,wy,2.370, t+150, t+900);
+      fx(w,0.06,0.06, MAT.alu, wx,wy+h/2-0.03,2.386, t+100, t+860);
+      fx(w,0.06,0.06, MAT.alu, wx,wy-h/2+0.03,2.386, t+130, t+890);
+      fx(0.06,h,0.06, MAT.alu, wx-w/2+0.03,wy,2.386, t+160, t+920);
+      fx(0.06,h,0.06, MAT.alu, wx+w/2-0.03,wy,2.386, t+190, t+950);
+      fx(0.04,h-0.08,0.05, MAT.alu, wx,wy,2.384, t+250, t+1000);
+      fx(w+0.22,0.10,0.20, MAT.sillC, wx,wy-h/2-0.08,2.39, t+300,t+1050);
+    })();
+    // ---- GARAGE DOOR (static, muted) ----
+    fx(2.00,2.18,0.03, MAT.reveal, 2.4,1.48,2.292, 5700,6320);
+    fx(1.90,2.08,0.02, MAT.cavity, 2.4,1.46,2.308, 5730,6350);
+    fx(1.86,2.04,0.05, MAT.gdoor,  2.4,1.45,2.330, 5760,6400);
+    for(var gp=0;gp<4;gp++){ fx(1.74,0.03,0.02, MAT.alu, 2.4,0.66+gp*0.48,2.358, 5820+gp*60, 6440+gp*60); }
+    fx(0.06,2.14,0.06, MAT.dpaint, 1.42,1.49,2.345, 5800,6400);
+    fx(0.06,2.14,0.06, MAT.dpaint, 3.38,1.49,2.345, 5820,6420);
+
+    function frameCam(){
+      var r=canvas.getBoundingClientRect(); var a=Math.max(0.2,(r.width||1)/(r.height||1));
+      // pull back on narrow/short viewports so the whole build stays in shot
+      var k = a < 1.9 ? (1 + (1.9-a)*0.30) : 1;
+      camera.position.set(11.5*k, 7.2*k*0.94, 15.5*k);
+      camera.lookAt(0.6, 2.4, 0);
+    }
+    function resize(){ var r=canvas.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); camera.aspect=(r.width||1)/(r.height||1); frameCam(); camera.updateProjectionMatrix(); }
+    resize(); window.addEventListener('resize',resize);
+
+    function easeOut(x){ return 1-Math.pow(1-x,3); }
+    function easeInOut(x){ return x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2; }
+    function smooth(x){ return x<=0?0:x>=1?1:x*x*x*(x*(x*6-15)+10); }
+    var start=null, last=null, angle=0.35;
+    window.__replay=function(){ start=null; };
+    function tick(t){
+      if(start===null){ start=t; last=t; angle=0.35; }
+      var dt=Math.min(0.05,(t-last)/1000); last=t;
+      var ms=t-start, sec=ms/1000;
+      for(var i=0;i<parts.length;i++){ var m=parts[i], u=m.userData;
+        var lp=(ms-u.t0)/(u.t1-u.t0);
+        var sh=!(u.noShadow);
+        if(lp<=0){ m.visible=false; continue; }
+        m.visible=true;
+        if(lp>=1){ m.scale.y=1; m.position.y=u.ty; m.castShadow=sh; if(u.fin<0.99){ m.material.opacity=u.fin; } continue; }
+        var e=smooth(lp), s=(u.grow==='none')?1:(0.0001+0.9999*e);
+        m.scale.y=s;
+        if(u.grow==='base'){ m.position.y=u.ty+u.minY*(1-s); }
+        else if(u.grow==='top'){ m.position.y=u.ty+u.maxY*(1-s); }
+        else if(u.grow==='none'){ m.scale.y=1; m.position.y=u.ty; }
+        if(u.fin<0.99){ m.material.opacity=u.fin*Math.min(1,e*1.6); }
+        m.castShadow=sh&&e>0.6;
+      }
+      var w=0.030*smooth(Math.min(1,sec/4.2));   // slow architectural drift
+      angle+=w*dt; house.rotation.y=angle;
+      renderer.render(scene,camera);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+});
+</script>
+<script>
+/* ====== CONFIG — edit here if anything changes ====== */
+var CONFIG = {
+  name:"Alex Guerrieri", role:"Director", org:"Smith & Turner Construction",
+  phone:"+61424541879", phoneDisplay:"0424 541 879",
+  email:"info@smithandturnerconstruction.com.au",
+  web:"https://www.smithandturnerconstruction.com.au",
+  instagram:"smithandturnerconstruction",
+  /* Where this page will live once uploaded. Used for the QR + share link
+     when the page is opened locally (file://) instead of from the web. */
+  cardUrl:"https://www.smithandturnerconstruction.com.au/card"
+};
+
+(function(){
+  var h = CONFIG.instagram.replace(/^@/,'');
+  document.getElementById('lnk-ig').href = "https://instagram.com/"+h;
+  document.getElementById('ig-handle').textContent = "@"+h;
+})();
+
+function liveUrl(){
+  var u = window.location.href;
+  if (/^https?:/i.test(u)) return u.split('#')[0];
+  return CONFIG.cardUrl;
+}
+
+/* ---------- toast ---------- */
+var toastEl=document.getElementById('toast'), toastT;
+function toast(m){ toastEl.textContent=m; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove('show'); },1900); }
+
+/* ---------- QR ---------- */
+(function(){
+  var box=document.getElementById('qr-box'); if(!box) return;
+  function draw(){
+    try{
+      var q=qrcode(0,'M'); q.addData(liveUrl()); q.make();
+      var svg=q.createSvgTag({cellSize:4,margin:1,scalable:true})
+              .replace(/#000000/gi,'#15161A').replace(/black/gi,'#15161A');
+      box.innerHTML=svg;
+      var s=box.querySelector('svg');
+      if(s){ s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio','xMidYMid meet'); }
+    }catch(e){ box.innerHTML=''; }
+  }
+  if(typeof qrcode!=="undefined") draw(); else window.addEventListener('load',draw);
+})();
+
+/* ---------- vCard ---------- */
+function vcard(){
+  var p=CONFIG.name.split(" "), last=p.pop(), first=p.join(" ");
+  return ["BEGIN:VCARD","VERSION:3.0","N:"+last+";"+first+";;;","FN:"+CONFIG.name,
+    "ORG:"+CONFIG.org,"TITLE:"+CONFIG.role,
+    "TEL;TYPE=CELL,VOICE:"+CONFIG.phone,
+    "EMAIL;TYPE=WORK,INTERNET:"+CONFIG.email,
+    "URL:"+CONFIG.web,
+    "X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/"+CONFIG.instagram.replace(/^@/,''),
+    "ADR;TYPE=WORK:;;;Sydney;NSW;;Australia",
+    "NOTE:Building quality, delivering confidence.","END:VCARD"].join("\r\n");
+}
+document.getElementById('save-btn').addEventListener('click',function(){
+  var data=vcard();
+  try{
+    var blob=new Blob([data],{type:"text/vcard;charset=utf-8"});
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download="Alex-Guerrieri.vcf"; a.rel="noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); },5000);
+    toast("Contact ready");
+  }catch(e){
+    window.location.href = "data:text/vcard;charset=utf-8,"+encodeURIComponent(data);
+  }
+});
+
+/* ---------- copy helper (works without clipboard API) ---------- */
+function copyText(t){
+  return new Promise(function(res,rej){
+    if(navigator.clipboard && window.isSecureContext){
+      navigator.clipboard.writeText(t).then(res).catch(function(){ legacy(); });
+    } else { legacy(); }
+    function legacy(){
+      try{
+        var ta=document.createElement('textarea');
+        ta.value=t; ta.setAttribute('readonly',''); ta.style.position='fixed';
+        ta.style.top='0'; ta.style.left='0'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length);
+        var ok=document.execCommand('copy'); document.body.removeChild(ta);
+        ok?res():rej();
+      }catch(e){ rej(); }
+    }
+  });
+}
+
+/* ---------- share (with a real fallback panel) ---------- */
+var modal=document.getElementById('share-modal');
+function openModal(){ document.getElementById('share-url').textContent=liveUrl(); modal.classList.add('open'); }
+function closeModal(){ modal.classList.remove('open'); }
+Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'),function(el){
+  el.addEventListener('click',closeModal);
+});
+document.getElementById('copy-btn').addEventListener('click',function(){
+  copyText(liveUrl()).then(function(){ toast("Link copied"); closeModal(); })
+                     .catch(function(){ toast("Select the link above"); });
+});
+document.getElementById('share-btn').addEventListener('click',function(){
+  var url=liveUrl();
+  var payload={ title:CONFIG.name+" — "+CONFIG.org, text:"Building quality, delivering confidence.", url:url };
+  if(navigator.share && window.isSecureContext){
+    navigator.share(payload).catch(function(err){
+      if(err && err.name==='AbortError') return;   // user cancelled — do nothing
+      openModal();
+    });
+    return;
+  }
+  openModal();   // no native share (desktop, or opened as a local file)
+});
+</script>
+</body>
+</html>
