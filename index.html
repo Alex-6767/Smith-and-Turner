@@ -16,10 +16,13 @@
 <!-- ===== Cinematic scroll hero: the ONLY CSS change. Additive; overrides just the
      hero layout so it can pin and scrub. Everything else stays in assets/lux.css. ===== -->
 <style id="hero-cinematic">
+  html,body{overflow-x:clip}                                       /* keep sticky/pin from breaking */
   .hero{position:relative;height:360vh;background:#B9C0C4}          /* tall scroll track */
-  .hero__stage{position:sticky;top:0;height:100vh;overflow:hidden; /* pinned 100vh viewport */
+  .hero__stage{position:absolute;top:0;left:0;right:0;height:100vh;overflow:hidden; /* pinned viewport (JS-driven) */
     display:flex;flex-direction:column;justify-content:center;
     background:linear-gradient(180deg,#B9C0C4 0%,#C4C1B7 34%,#C9C1B1 52%,#B9B3A6 72%,#A29C90 100%)}
+  .hero__stage.is-fixed{position:fixed}                            /* pinned while scrolling through the track */
+  .hero__stage.is-bottom{position:absolute;top:auto;bottom:0}      /* released -> hands off to next section */
   .hero__stage #hero-gl{position:absolute;inset:0;width:100%;height:100%;display:block}
   .hero__stage .hero__vign,.hero__stage .hero__grain{position:absolute;inset:0;pointer-events:none}
   .hero__stage .hero__in{position:relative;z-index:2;width:100%;will-change:opacity,transform}
@@ -157,7 +160,9 @@
      Three.js build. assets/lux.js (progress bar, burger, reveals, form) is untouched. ===== -->
 <script>
 window.addEventListener('load', function(){
-  function fail(m){ if(window.console&&console.warn) console.warn('hero 3D unavailable:', m); }
+  function fail(m){ if(window.console&&console.warn) console.warn('hero 3D unavailable:', m);
+    var h=document.querySelector('.hero'); if(h) h.style.height='100vh';
+    var s=document.querySelector('.hero__stage'); if(s) s.classList.remove('is-fixed','is-bottom'); }
   if(!window.THREE){ fail('Three.js did not load'); return; }
   try{ start(); }catch(e){ fail(e.message); }
 
@@ -175,6 +180,7 @@ window.addEventListener('load', function(){
 
     var canvas=document.getElementById('hero-gl');
     var heroEl=document.querySelector('.hero');
+    var stage=document.querySelector('.hero__stage');
     var copyEl=document.querySelector('.hero__in');
     var cueEl =document.querySelector('.scroll-cue');
 
@@ -650,8 +656,20 @@ window.addEventListener('load', function(){
       return clamp01(-top/track);
     }
 
+    // JS-driven pin — robust where CSS position:sticky is broken by an ancestor's overflow
+    function pinStage(){
+      if(!stage) return;
+      var vh=window.innerHeight;
+      var track=heroEl.offsetHeight - vh;
+      var top=heroEl.getBoundingClientRect().top;
+      if(track<=0){ stage.classList.remove('is-fixed','is-bottom'); return; }
+      if(top>0){ stage.classList.remove('is-fixed','is-bottom'); }                                    // hero not reached
+      else if(-top < track){ stage.classList.add('is-fixed'); stage.classList.remove('is-bottom'); }  // pinned
+      else { stage.classList.remove('is-fixed'); stage.classList.add('is-bottom'); }                  // released at bottom
+    }
+
     var targetF=0, shownF=-1, needsRender=true;
-    function setTarget(){ targetF=scrollFrac(); }
+    function setTarget(){ targetF=scrollFrac(); pinStage(); }
     document.addEventListener('scroll', setTarget, {passive:true});
     window.addEventListener('resize', function(){ resize(); setTarget(); });
 
@@ -660,7 +678,13 @@ window.addEventListener('load', function(){
       return r.bottom>0 && r.top<window.innerHeight;
     }
 
-    resize();
+    // ensure the canvas measures the real area once layout / fonts settle
+    resize(); pinStage();
+    requestAnimationFrame(resize);
+    setTimeout(function(){ resize(); pinStage(); }, 80);
+    setTimeout(function(){ resize(); pinStage(); }, 400);
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ resize(); });
+    if('ResizeObserver' in window){ try{ new ResizeObserver(function(){ resize(); }).observe(stage||canvas); }catch(e){} }
 
     if(REDUCE){
       // No pin/scrub — present the finished house, once.
@@ -674,6 +698,7 @@ window.addEventListener('load', function(){
 
     setTarget();
     function frame(){
+      pinStage();
       // ease the shown value toward the scroll target: responsive but never jittery
       if(shownF<0) shownF=targetF;
       shownF += (targetF-shownF)*0.14;
