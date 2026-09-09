@@ -901,6 +901,7 @@ if (!window.THREE) {
     })();
 
     function bail(msg) {
+      window.__HERO_ERR = String(msg);
       if (window.console && console.warn) console.warn('hero:', msg);
       hero.style.height = 'auto';
       stage.style.position = 'relative';
