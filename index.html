@@ -282,6 +282,13 @@ html, body { overflow-x: clip; }
 </div>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* fallback CDN: if the first host is blocked or slow, load Three from a second
+   source before the hero boots, so a flaky network can't kill the scene */
+if (!window.THREE) {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
+}
+</script>
 <!-- ===== Cinematic hero: photoreal villa scene + scroll controller ===== -->
 <script>
 /* villa-scene.js — locked-off photoreal timelapse of a modern concrete-frame
@@ -880,6 +887,18 @@ html, body { overflow-x: clip; }
     var pnum   = document.querySelector('.hero-prog__num');
     var prog   = document.querySelector('.hero-prog');
     if (!hero || !stage || !canvas) return;
+    window.__HERO_BUILD = 'v5-inline';
+    if (window.console) console.log('[hero] build v5-inline active');
+
+    // Force the canvas box IMMEDIATELY, before any scene/CDN work. Even if
+    // everything after this fails, the canvas can never be a stray small box.
+    (function primeCanvas(){
+      var s = canvas.style;
+      s.setProperty('position','absolute','important');
+      s.setProperty('top','0','important'); s.setProperty('left','0','important');
+      s.setProperty('width','100%','important'); s.setProperty('height','100%','important');
+      s.setProperty('display','block','important');
+    })();
 
     function bail(msg) {
       if (window.console && console.warn) console.warn('hero:', msg);
@@ -888,6 +907,8 @@ html, body { overflow-x: clip; }
       stage.style.height = '100svh';
       if (prog) prog.style.display = 'none';
       if (copy) { copy.style.opacity = 1; copy.style.transform = 'none'; }
+      // hide the canvas entirely — a clean gradient hero, never a stray box
+      canvas.style.setProperty('display','none','important');
     }
     if (!window.THREE || !window.VillaScene) { bail('scene unavailable'); return; }
 
