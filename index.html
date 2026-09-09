@@ -79,6 +79,29 @@ html, body { overflow-x: clip; }
 }
 .hero__stage .hero__vign, .hero__stage .hero__grain { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 
+/* ================= COPY — always visible, never italic =================
+   Guarantees the eyebrow, paragraph and buttons render even if a lux.js
+   entrance animation never fires, and keeps <em> upright like the brand type. */
+.hero__stage .hero__in .label,
+.hero__stage .hero__in h1,
+.hero__stage .hero__in h1 .ln,
+.hero__stage .hero__in h1 .ln > span,
+.hero__stage .hero__in h1 em,
+.hero__stage .hero__in .hero__sub,
+.hero__stage .hero__in .hero__cta,
+.hero__stage .hero__in .btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  animation: none !important;
+  clip-path: none !important;
+  font-style: normal !important;      /* em stays upright, matching the brand */
+}
+.hero__stage .hero__in { visibility: visible !important; animation: none !important; }
+.hero__stage .hero__in h1 .ln { overflow: visible !important; }
+.hero__stage .hero__in .hero__sub { display: block !important; }
+.hero__stage .hero__in .hero__cta { display: flex !important; flex-wrap: wrap; gap: 14px; }
+
 /* ================= COPY — holds its opacity throughout ================= */
 .hero__stage .hero__in {
   box-sizing: border-box;
@@ -113,14 +136,14 @@ html, body { overflow-x: clip; }
   .hero { height: 210svh; }
   .hero__stage .hero__in { padding-bottom: clamp(38px, 7svh, 62px); }
   .hero__stage .hero__in h1 { font-size: clamp(24px, 4.6vh, 40px); line-height: .98; margin-bottom: 10px; }
-  .hero__stage .hero__in .hero__sub { display: none; }
+  .hero__stage .hero__in .hero__sub { display: none !important; }
   .hero__stage .hero__in .hero__cta { gap: 10px; }
   .hero__stage .hero__in .btn { padding: 10px 16px; font-size: 12px; }
   .hero__stage .hero__eyebrow { margin-bottom: 10px; font-size: 11px; }
 }
 @media (orientation: landscape) and (max-height: 420px) {
   .hero__stage .hero__in h1 { font-size: clamp(20px, 5vh, 30px); }
-  .hero__stage .hero__eyebrow { display: none; }
+  .hero__stage .hero__eyebrow { display: none !important; }
 }
 
 /* ================= PROGRESS INDICATOR — clearly visible ================= */
@@ -899,8 +922,8 @@ if (!window.THREE) {
     var pnum   = document.querySelector('.hero-prog__num');
     var prog   = document.querySelector('.hero-prog');
     if (!hero || !stage || !canvas) return;
-    window.__HERO_BUILD = 'v9-detached';
-    if (window.console) console.log('[hero] build v9-detached active');
+    window.__HERO_BUILD = 'v10-copy';
+    if (window.console) console.log('[hero] build v10-copy active');
 
     // Force the canvas box IMMEDIATELY, before any scene/CDN work. Even if
     // everything after this fails, the canvas can never be a stray small box.
@@ -911,11 +934,11 @@ if (!window.THREE) {
       s.setProperty('width','100%','important'); s.setProperty('height','100%','important');
       s.setProperty('display','block','important');
     })();
-    /* ---- DETACH: move the stage to be a direct child of <body>. No ancestor
-       (max-width, overflow, transform) can then constrain it, clip it, or break
-       its pinning. The .hero section stays in the flow as the scroll track. ---- */
-    try {
-      if (stage.parentNode !== document.body) document.body.appendChild(stage);
+    /* ---- PIN IN PLACE FIRST. Keep the stage inside .hero so lux.css and
+       lux.js keep applying (their rules and entrance animations depend on the
+       original DOM position). Only detach to <body> if pinning in place fails
+       because an ancestor has a transform/filter creating a containing block. ---- */
+    function applyStageStyle() {
       var ss = stage.style;
       ss.setProperty('position', 'fixed', 'important');
       ss.setProperty('top', '0', 'important');
@@ -925,7 +948,18 @@ if (!window.THREE) {
       ss.setProperty('margin', '0', 'important');
       ss.setProperty('z-index', '1', 'important');
       ss.setProperty('will-change', 'transform', 'important');
-    } catch (e) {}
+    }
+    applyStageStyle();
+    // verify it really is viewport-width and viewport-anchored
+    (function ensurePin() {
+      var vw = document.documentElement.clientWidth || window.innerWidth;
+      var r = stage.getBoundingClientRect();
+      if (Math.round(r.width) < vw - 2 || Math.abs(Math.round(r.left)) > 2) {
+        // an ancestor is trapping it — last resort, move to <body>
+        try { document.body.appendChild(stage); applyStageStyle(); } catch (e) {}
+      }
+    })();
+
     function stageH() { return window.innerHeight; }
     function pinStage() {
       var vh = stageH();
@@ -1102,7 +1136,7 @@ if (!window.THREE) {
       // wording holds its opacity throughout; only a whisper of settle
       if (copy) {
         var t = smooth(cl((f - 0.18) / 0.5));
-        copy.style.opacity = (1 - (1 - COPY_MIN) * t).toFixed(3);
+        copy.style.setProperty('opacity', (1 - (1 - COPY_MIN) * t).toFixed(3), 'important');
       }
 
       // progress indicator
