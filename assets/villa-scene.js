@@ -557,8 +557,12 @@
       renderer.setSize(w, h, false);
       var a = w / Math.max(1, h);
       camera.aspect = a;
-      camera.fov = a < 1 ? Math.min(46, 34 * (1 + (1 / a - 1) * 0.16)) : 34;
-      var pull = a < 1 ? Math.min(1.8, 1 + (1 / a - 1) * 0.55) : 1;
+      // portrait/narrow: widen the lens AND pull the camera back so the whole
+      // composition sits inside the frame instead of cropping at the edges
+      camera.fov  = a < 1 ? Math.min(56, 34 * (1 + (1 / a - 1) * 0.34)) : 34;
+      var pull    = a < 1 ? Math.min(2.9, 1 + (1 / a - 1) * 1.15) : 1;
+      // very short landscape (phone rotated): ease back a touch as well
+      if (a >= 1 && h < 560) pull = 1 + (560 - h) / 560 * 0.34;
       camera.position.copy(CAM.clone().sub(LOOK).multiplyScalar(pull).add(LOOK));
       camera.lookAt(LOOK);
       camera.updateProjectionMatrix();

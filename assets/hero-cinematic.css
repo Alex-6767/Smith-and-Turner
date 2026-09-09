@@ -1,101 +1,116 @@
 /* hero-cinematic.css — additive overrides for the cinematic scroll hero.
-   Loaded AFTER assets/lux.css. Touches ONLY the hero. */
+   Loaded AFTER assets/lux.css. Touches ONLY the hero + header treatment. */
 
+/* overflow-x:clip (NOT hidden) — clip does not create a scroll container,
+   so position:sticky below keeps working. This is what makes the pin smooth. */
 html, body { overflow-x: clip; }
 
-/* ---- scroll track: tightened (was 360vh) so there's far less dead scroll ---- */
+/* ================= HEADER — maintained + clearly delineated ================= */
+.hd {
+  background: #BEBCB5;
+  border-bottom: 1px solid rgba(20,20,20,.22);
+  box-shadow: 0 1px 14px rgba(0,0,0,.10);
+}
+.hd__in { padding-bottom: 14px; }
+.mnav { background: #BEBCB5; }
+
+/* ================= SCROLL TRACK ================= */
 .hero { position: relative; height: 240svh; background: #0f1114; }
 @supports not (height: 100svh) { .hero { height: 240vh; } }
 
-/* ---- pinned stage ---- */
+/* pinned by NATIVE sticky — compositor driven, cannot jump or lag */
 .hero__stage {
-  position: absolute; top: 0; left: 0; right: 0;
+  position: -webkit-sticky; position: sticky; top: 0;
   height: 100svh; overflow: hidden; background: #0f1114;
-  display: flex; flex-direction: column; justify-content: flex-end;  /* copy sits low, house fills frame */
+  display: flex; flex-direction: column; justify-content: flex-end;
+  /* reserve the header band so hero copy can never ride up underneath it */
+  padding-top: clamp(88px, 13svh, 128px);
 }
 @supports not (height: 100svh) { .hero__stage { height: 100vh; } }
-.hero__stage.is-fixed  { position: fixed; }
-.hero__stage.is-bottom { position: absolute; top: auto; bottom: 0; }
 
 .hero__stage #hero-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-/* legibility gradient — dark at the bottom where the copy lives */
 .hero__stage .hero__scrim {
   position: absolute; inset: 0; pointer-events: none; z-index: 1;
   background:
-    linear-gradient(180deg, rgba(10,12,15,.42) 0%, rgba(10,12,15,0) 26%),
-    linear-gradient(0deg,  rgba(10,12,15,.72) 0%, rgba(10,12,15,.28) 26%, rgba(10,12,15,0) 52%);
+    linear-gradient(180deg, rgba(10,12,15,.40) 0%, rgba(10,12,15,0) 24%),
+    linear-gradient(0deg,  rgba(10,12,15,.74) 0%, rgba(10,12,15,.30) 26%, rgba(10,12,15,0) 54%);
 }
 .hero__stage .hero__vign, .hero__stage .hero__grain { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 
-/* ---- copy: bottom-anchored, tightened padding (kills the dead space) ---- */
+/* ================= COPY — holds its opacity throughout ================= */
 .hero__stage .hero__in {
   position: relative; z-index: 3; width: 100%;
   padding-bottom: clamp(74px, 12svh, 132px);
-  will-change: opacity, transform, filter;
+  will-change: opacity;
 }
 .hero__stage .hero__in,
-.hero__stage .hero__in h1,
-.hero__stage .hero__in .hero__sub,
 .hero__stage .hero__in .label { color: #F3F1EC; }
-.hero__stage .hero__in h1 { color: #fff; }
-.hero__stage .hero__in h1 em { color: rgba(255,255,255,.62); }
-.hero__stage .hero__in .hero__sub { color: rgba(243,241,236,.86); text-shadow: 0 1px 24px rgba(0,0,0,.5); }
-.hero__stage .hero__eyebrow, .hero__stage .hero__eyebrow::before { color: rgba(243,241,236,.72); }
-.hero__stage .hero__eyebrow::before { background: rgba(243,241,236,.6); }
-.hero__stage .btn--line { border-color: rgba(255,255,255,.7); color: #fff; }
+.hero__stage .hero__in h1 { color: #fff; text-shadow: 0 2px 30px rgba(0,0,0,.34); }
+.hero__stage .hero__in h1 em { color: rgba(255,255,255,.70); }
+.hero__stage .hero__in .hero__sub { color: rgba(243,241,236,.92); text-shadow: 0 1px 22px rgba(0,0,0,.55); }
+.hero__stage .hero__eyebrow { color: rgba(243,241,236,.82); }
+.hero__stage .hero__eyebrow::before { background: rgba(243,241,236,.7); }
+.hero__stage .btn--line { border-color: rgba(255,255,255,.78); color: #fff; }
 .hero__stage .btn--solid { background: #F3F1EC; color: #14161A; }
 
-/* trim the sub-copy on shorter viewports so nothing clips */
+/* scale the block down as the viewport gets shorter so it always fits */
+@media (max-height: 900px) {
+  .hero__stage .hero__in h1 { font-size: clamp(32px, 6.2vh, 72px); margin-bottom: 16px; }
+  .hero__stage .hero__in .hero__sub { font-size: 16px; max-width: 52ch; margin-bottom: 22px; }
+  .hero__stage .hero__in { padding-bottom: clamp(56px, 9svh, 104px); }
+}
 @media (max-height: 780px) {
-  .hero__stage .hero__in h1 { font-size: clamp(34px, 7.4vw, 62px); margin-bottom: 16px; }
-  .hero__stage .hero__in .hero__sub { font-size: 15px; max-width: 46ch; margin-bottom: 20px; }
+  .hero__stage .hero__in h1 { font-size: clamp(30px, 5.8vh, 58px); margin-bottom: 14px; }
+  .hero__stage .hero__in .hero__sub { font-size: 15px; max-width: 46ch; margin-bottom: 18px; }
 }
 
-/* ---- LANDSCAPE PHONE / SHORT VIEWPORTS: fit everything, clip nothing ---- */
+/* ================= LANDSCAPE PHONE / SHORT VIEWPORTS ================= */
 @media (orientation: landscape) and (max-height: 560px) {
   .hero { height: 210svh; }
-  .hero__stage .hero__in { padding-bottom: clamp(40px, 7svh, 64px); }
-  .hero__stage .hero__in h1 {
-    font-size: clamp(24px, 4.6vh, 40px); line-height: .98; margin-bottom: 10px;
-  }
-  .hero__stage .hero__in h1 .ln:nth-child(3),
-  .hero__stage .hero__in h1 .ln:nth-child(4) { display: inline-block; }  /* 4 lines -> 2 rows */
-  .hero__stage .hero__in .hero__sub { display: none; }  /* body copy only; heading + CTAs stay visible */
+  .hero__stage .hero__in { padding-bottom: clamp(38px, 7svh, 62px); }
+  .hero__stage .hero__in h1 { font-size: clamp(24px, 4.6vh, 40px); line-height: .98; margin-bottom: 10px; }
+  .hero__stage .hero__in .hero__sub { display: none; }
   .hero__stage .hero__in .hero__cta { gap: 10px; }
   .hero__stage .hero__in .btn { padding: 10px 16px; font-size: 12px; }
   .hero__stage .hero__eyebrow { margin-bottom: 10px; font-size: 11px; }
-  .hero-prog { display: none; }
 }
 @media (orientation: landscape) and (max-height: 420px) {
   .hero__stage .hero__in h1 { font-size: clamp(20px, 5vh, 30px); }
   .hero__stage .hero__eyebrow { display: none; }
 }
 
-/* ---- progress indicator: minimal vertical rule + percentage ---- */
+/* ================= PROGRESS INDICATOR — clearly visible ================= */
 .hero-prog {
-  position: absolute; z-index: 4; right: clamp(16px, 3.4vw, 40px);
+  position: absolute; z-index: 4; right: clamp(14px, 3vw, 38px);
   top: 50%; transform: translateY(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 12px;
   pointer-events: none; transition: opacity .3s ease;
 }
 .hero-prog__track {
-  position: relative; width: 1px; height: clamp(72px, 16svh, 140px);
-  background: rgba(243,241,236,.26);
+  position: relative; width: 3px; border-radius: 3px;
+  height: clamp(96px, 20svh, 168px);
+  background: rgba(255,255,255,.30);
+  box-shadow: 0 1px 10px rgba(0,0,0,.35);
 }
 .hero-prog__bar {
-  position: absolute; inset: 0; background: #F3F1EC;
+  position: absolute; inset: 0; border-radius: 3px; background: #fff;
   transform: scaleY(0); transform-origin: top;
+  box-shadow: 0 0 12px rgba(255,255,255,.55);
 }
-.hero-prog__num, .hero-prog__lbl {
-  font-family: "Space Mono", monospace; color: rgba(243,241,236,.8);
-  font-size: 10px; letter-spacing: .18em;
+.hero-prog__num {
+  font-family: "Space Mono", monospace; font-weight: 700;
+  font-size: 15px; letter-spacing: .06em; color: #fff;
+  text-shadow: 0 1px 12px rgba(0,0,0,.6);
 }
+.hero-prog__num::after { content: "%"; font-size: 9px; opacity: .75; margin-left: 1px; vertical-align: super; }
 .hero-prog__lbl {
   writing-mode: vertical-rl; text-orientation: mixed;
-  text-transform: uppercase; letter-spacing: .26em; color: rgba(243,241,236,.55);
+  font-family: "Space Mono", monospace; text-transform: uppercase;
+  font-size: 10px; letter-spacing: .28em; color: rgba(255,255,255,.85);
+  text-shadow: 0 1px 10px rgba(0,0,0,.6);
 }
-@media (max-width: 520px) { .hero-prog__lbl { display: none; } }
+@media (max-height: 620px) { .hero-prog__lbl { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .hero { height: 100svh; }
