@@ -184,7 +184,7 @@ html, body { overflow-x: clip; }
 <section class="hero" aria-label="Introduction">
 <!-- ===== Cinematic scroll hero. Stage is pinned by JS; the construction scrubs with scroll. ===== -->
 <div class="hero__stage">
-<canvas id="hero-gl" aria-hidden="true"></canvas>
+<canvas id="hero-gl" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block;z-index:0"></canvas>
 <div class="hero__scrim" aria-hidden="true"></div>
 <div class="hero__vign" aria-hidden="true"></div>
 <div class="hero__grain" aria-hidden="true"></div>
@@ -887,8 +887,8 @@ if (!window.THREE) {
     var pnum   = document.querySelector('.hero-prog__num');
     var prog   = document.querySelector('.hero-prog');
     if (!hero || !stage || !canvas) return;
-    window.__HERO_BUILD = 'v5-inline';
-    if (window.console) console.log('[hero] build v5-inline active');
+    window.__HERO_BUILD = 'v6-inline';
+    if (window.console) console.log('[hero] build v6-inline active');
 
     // Force the canvas box IMMEDIATELY, before any scene/CDN work. Even if
     // everything after this fails, the canvas can never be a stray small box.
@@ -941,13 +941,15 @@ if (!window.THREE) {
       if (w < window.innerWidth * 0.9) w = window.innerWidth;
       return [Math.max(1, Math.round(w)), Math.max(1, Math.round(h))];
     }
-    function forceCanvasBox(w, h) {
+    function forceCanvasBox() {
       var s = canvas.style;
       s.setProperty('position', 'absolute', 'important');
       s.setProperty('top', '0', 'important');
       s.setProperty('left', '0', 'important');
-      s.setProperty('width', w + 'px', 'important');
-      s.setProperty('height', h + 'px', 'important');
+      // percentages, never px: the display box always tracks the stage even if
+      // a measurement is wrong. Only the drawing buffer uses the numbers.
+      s.setProperty('width', '100%', 'important');
+      s.setProperty('height', '100%', 'important');
       s.setProperty('max-width', 'none', 'important');
       s.setProperty('max-height', 'none', 'important');
       s.setProperty('display', 'block', 'important');
@@ -956,7 +958,7 @@ if (!window.THREE) {
       var d = stageSize(), w = d[0], h = d[1];
       if (!force && w === lastW && h === lastH) return false;
       lastW = w; lastH = h;
-      forceCanvasBox(w, h);
+      forceCanvasBox();
       scene.resize(w, h);
       return true;
     }
