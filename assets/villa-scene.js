@@ -1,0 +1,575 @@
+/* villa-scene.js — locked-off photoreal timelapse of a modern concrete-frame
+   villa, matched to the reference footage: golden-hour dusk, flat roof, white
+   render, dark ribbon glazing, excavator on site, cypress + boundary wall,
+   asphalt road in the foreground. Camera is fully locked.
+   window.VillaScene.create(canvas) -> { resize(w,h), render(p) }  p = 0..1 */
+(function () {
+  function create(canvas) {
+    var T3 = window.THREE;
+    var renderer = new T3.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = T3.PCFSoftShadowMap;
+    renderer.outputEncoding = T3.sRGBEncoding;
+    renderer.toneMapping = T3.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
+    var scene = new T3.Scene();
+    scene.fog = new T3.Fog(0xC0A98C, 46, 145);
+    var camera = new T3.PerspectiveCamera(34, 16 / 9, 0.1, 400);
+    var CAM = new T3.Vector3(17.5, 5.6, 20.5), LOOK = new T3.Vector3(-0.4, 3.1, -0.6);
+    camera.position.copy(CAM); camera.lookAt(LOOK);
+
+    /* ---------- dusk sky + IBL ---------- */
+    function skyTexture() {
+      var c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+      var x = c.getContext('2d');
+      var g = x.createLinearGradient(0, 0, 0, 512);
+      g.addColorStop(0.00, '#28466f');
+      g.addColorStop(0.22, '#5b7ea3');
+      g.addColorStop(0.38, '#9fb2c4');
+      g.addColorStop(0.46, '#e3c9a6');
+      g.addColorStop(0.505, '#f0d3ab');
+      g.addColorStop(0.53, '#8e8471');
+      g.addColorStop(1.00, '#5c5347');
+      x.fillStyle = g; x.fillRect(0, 0, 1024, 512);
+      for (var i = 0; i < 120; i++) {
+        var cy = 90 + Math.random() * 150, cx = Math.random() * 1024;
+        x.globalAlpha = 0.04 + Math.random() * 0.09;
+        x.fillStyle = cy > 200 ? '#ffd9a8' : '#ffffff';
+        x.beginPath(); x.ellipse(cx, cy, 70 + Math.random() * 240, 6 + Math.random() * 20, 0, 0, 7); x.fill();
+      }
+      x.globalAlpha = 1;
+      var t = new T3.CanvasTexture(c);
+      t.mapping = T3.EquirectangularReflectionMapping; t.encoding = T3.sRGBEncoding;
+      return t;
+    }
+    var skyTex = skyTexture();
+    try {
+      var pm = new T3.PMREMGenerator(renderer); pm.compileEquirectangularShader();
+      var rt = pm.fromEquirectangular(skyTex); scene.environment = rt.texture; pm.dispose();
+    } catch (e) { scene.environment = skyTex; }
+    var dome = new T3.Mesh(new T3.SphereGeometry(200, 40, 20),
+      new T3.MeshBasicMaterial({ map: skyTex, side: T3.BackSide, depthWrite: false }));
+    scene.add(dome);
+
+    var hemi = new T3.HemisphereLight(0x9fb9d6, 0x6d5f4b, 0.5); scene.add(hemi);
+    var sun = new T3.DirectionalLight(0xffb877, 2.4);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 90;
+    sun.shadow.camera.left = -24; sun.shadow.camera.right = 24;
+    sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -14;
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.025; sun.shadow.radius = 5;
+    scene.add(sun);
+    var bounce = new T3.DirectionalLight(0x7f95b5, 0.28); bounce.position.set(12, 4, -10); scene.add(bounce);
+
+    var MAXA = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
+    function tex(draw, rx, ry) {
+      var c = document.createElement('canvas'); c.width = c.height = 512; draw(c.getContext('2d'));
+      var t = new T3.CanvasTexture(c); t.wrapS = t.wrapT = T3.RepeatWrapping;
+      t.repeat.set(rx, ry); t.anisotropy = MAXA; return t;
+    }
+    function grain(ctx, base, amp) {
+      ctx.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')'; ctx.fillRect(0, 0, 512, 512);
+      [8, 16, 32, 64, 128, 256].forEach(function (n, i) {
+        var t = document.createElement('canvas'); t.width = t.height = n; var c2 = t.getContext('2d');
+        var im = c2.createImageData(n, n), a = amp / (i * 0.8 + 1);
+        for (var p = 0; p < n * n; p++) {
+          var v = base + (Math.random() * 2 - 1) * a;
+          im.data[p * 4] = im.data[p * 4 + 1] = im.data[p * 4 + 2] = v; im.data[p * 4 + 3] = 255;
+        }
+        c2.putImageData(im, 0, 0); ctx.globalAlpha = 0.5; ctx.drawImage(t, 0, 0, 512, 512);
+      });
+      ctx.globalAlpha = 1;
+    }
+    var texConc = tex(function (x) {
+      grain(x, 128, 22);
+      for (var i = 0; i < 1200; i++) {
+        var g = 96 + Math.random() * 88;
+        x.fillStyle = 'rgba(' + g + ',' + g + ',' + g + ',' + (0.10 + Math.random() * 0.2) + ')';
+        x.beginPath(); x.arc(Math.random() * 512, Math.random() * 512, 1 + Math.random() * 2.2, 0, 7); x.fill();
+      }
+    }, 3, 3);
+    var texRender = tex(function (x) {
+      grain(x, 132, 12);
+      x.globalAlpha = 0.05;
+      for (var i = 0; i < 70; i++) {
+        var y = Math.random() * 512; x.strokeStyle = '#000'; x.lineWidth = 1;
+        x.beginPath(); x.moveTo(0, y); x.bezierCurveTo(180, y + (Math.random() * 8 - 4), 340, y + (Math.random() * 8 - 4), 512, y); x.stroke();
+      }
+      x.globalAlpha = 1;
+    }, 2, 2);
+    var texBlock = tex(function (x) {
+      grain(x, 130, 10);
+      var bh = 40, bw = 80;
+      for (var row = 0, y = 0; y < 512; y += bh, row++) {
+        var off = (row % 2) * bw / 2;
+        for (var bx = off - bw; bx < 512 + bw; bx += bw) {
+          var v = Math.random() * 18 - 9;
+          x.fillStyle = 'rgba(' + (138 + v) + ',' + (133 + v) + ',' + (124 + v) + ',0.4)';
+          x.fillRect(bx + 3, y + 3, bw - 6, bh - 6);
+        }
+        x.strokeStyle = 'rgba(86,84,80,0.55)'; x.lineWidth = 4;
+        x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke();
+        for (var b = off; b <= 512; b += bw) { x.beginPath(); x.moveTo(b, y); x.lineTo(b, y + bh); x.stroke(); }
+      }
+    }, 3, 2);
+    var texDirt = tex(function (x) {
+      grain(x, 126, 26);
+      for (var i = 0; i < 500; i++) {
+        x.globalAlpha = 0.05 + Math.random() * 0.1; x.strokeStyle = '#000'; x.lineWidth = 1 + Math.random() * 3;
+        var y = Math.random() * 512; x.beginPath(); x.moveTo(0, y); x.lineTo(512, y + (Math.random() * 30 - 15)); x.stroke();
+      }
+      x.globalAlpha = 1;
+    }, 26, 26);
+    var texAsph = tex(function (x) { grain(x, 120, 16); }, 20, 20);
+
+    function M(color, rough, metal, extra) {
+      var o = { color: new T3.Color(color), roughness: rough, metalness: metal || 0, envMapIntensity: 1.0 };
+      if (extra) for (var k in extra) o[k] = extra[k];
+      return new T3.MeshStandardMaterial(o);
+    }
+    var MAT = {
+      conc: M(0x9C9992, 0.92, 0, { bumpMap: texConc, bumpScale: 0.06 }),
+      concDark: M(0x8A8781, 0.94, 0, { bumpMap: texConc, bumpScale: 0.06 }),
+      block: M(0xA6A29A, 0.95, 0, { bumpMap: texBlock, bumpScale: 0.055 }),
+      render: M(0xEDE8DF, 0.88, 0, { bumpMap: texRender, bumpScale: 0.03 }),
+      render2: M(0xE4DED4, 0.9, 0, { bumpMap: texRender, bumpScale: 0.03 }),
+      stone: M(0x8E877B, 0.9, 0, { bumpMap: texConc, bumpScale: 0.09 }),
+      glass: M(0x0E1216, 0.045, 0.22, { envMapIntensity: 2.6 }),
+      frame: M(0x22262A, 0.42, 0.5, { envMapIntensity: 1.2 }),
+      alu: M(0x8E8B85, 0.35, 0.65, { envMapIntensity: 1.3 }),
+      door: M(0x2A2622, 0.55, 0.15),
+      gdoor: M(0x2E3236, 0.5, 0.3, { envMapIntensity: 1.1 }),
+      rebar: M(0x6E5240, 0.85, 0.25),
+      dirt: M(0x8B7A62, 1.0, 0, { bumpMap: texDirt, bumpScale: 0.16 }),
+      gravel: M(0xADA595, 0.98, 0, { bumpMap: texConc, bumpScale: 0.11 }),
+      asphalt: M(0x3B3A38, 0.86, 0, { bumpMap: texAsph, bumpScale: 0.05 }),
+      kerb: M(0xA9A49B, 0.9, 0, { bumpMap: texConc, bumpScale: 0.05 }),
+      wallLow: M(0xE6E1D7, 0.9, 0, { bumpMap: texRender, bumpScale: 0.03 }),
+      cypress: M(0x37452F, 1.0, 0),
+      foliage: M(0x4C5540, 1.0, 0),
+      trunk: M(0x5B4E3C, 1.0, 0),
+      yellow: M(0xB99323, 0.6, 0.28),
+      steel: M(0x4A4844, 0.5, 0.6),
+      scaff: M(0x585652, 0.65, 0.4)
+    };
+
+    /* ---------- scheduling ---------- */
+    var items = [], temps = [];
+    var _geo = {};
+    function boxGeo(w, h, d) {
+      var k = w.toFixed(3) + '|' + h.toFixed(3) + '|' + d.toFixed(3);
+      if (!_geo[k]) _geo[k] = new T3.BoxGeometry(w, h, d);
+      return _geo[k];
+    }
+    function push(mesh, h, t0, t1, mode) {
+      if (mesh.isMesh) {
+        mesh.material = mesh.material.clone();
+        mesh.material.transparent = true; mesh.material.opacity = 0;
+        mesh.castShadow = false; mesh.receiveShadow = true;
+      } else {
+        mesh.traverse(function (o) {
+          if (!o.isMesh) return;
+          o.material = o.material.clone();
+          o.material.transparent = true; o.material.opacity = 0;
+          o.castShadow = false; o.receiveShadow = true;
+        });
+      }
+      mesh.visible = false;
+      mesh.userData = { t0: t0, t1: t1, mode: mode || 'rise', h: h, ty: mesh.position.y, base: mesh.position.y - h / 2 };
+      scene.add(mesh); items.push(mesh); return mesh;
+    }
+    /* B(w,h,d, mat, cx,cy,cz, t0,t1, mode) — cy is the CENTRE height */
+    function B(w, h, d, mat, x, y, z, t0, t1, mode) {
+      var m = new T3.Mesh(boxGeo(w, h, d), mat); m.position.set(x, y, z);
+      return push(m, h, t0, t1, mode);
+    }
+    /* slab / wall by extents so the layout reads like a plan */
+    function slab(x0, x1, z0, z1, y, t, mat, t0, t1) {
+      return B(x1 - x0, t, z1 - z0, mat, (x0 + x1) / 2, y + t / 2, (z0 + z1) / 2, t0, t1, 'rise');
+    }
+    function wallX(x0, x1, z, y0, y1, th, mat, t0, t1, mode) {
+      return B(x1 - x0, y1 - y0, th, mat, (x0 + x1) / 2, (y0 + y1) / 2, z, t0, t1, mode);
+    }
+    function wallZ(z0, z1, x, y0, y1, th, mat, t0, t1, mode) {
+      return B(th, y1 - y0, z1 - z0, mat, x, (y0 + y1) / 2, (z0 + z1) / 2, t0, t1, mode);
+    }
+    function temp(obj, in0, in1, out0, out1) {
+      obj.traverse(function (o) {
+        if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0; o.castShadow = true; o.receiveShadow = true; }
+      });
+      obj.visible = false;
+      obj.userData = { in0: in0, in1: in1, out0: out0, out1: out1, ty: obj.position.y };
+      scene.add(obj); temps.push(obj); return obj;
+    }
+
+    /* ---------- permanent site ---------- */
+    var pad = new T3.Mesh(new T3.PlaneGeometry(400, 400), MAT.dirt);
+    pad.rotation.x = -Math.PI / 2; pad.receiveShadow = true; scene.add(pad);
+
+    (function road() {
+      var a = new T3.Mesh(boxGeo(90, 0.12, 12), MAT.asphalt);
+      a.position.set(4, 0.06, 15.5); a.receiveShadow = true; scene.add(a);
+      var k = new T3.Mesh(boxGeo(90, 0.26, 0.45), MAT.kerb);
+      k.position.set(4, 0.13, 9.4); k.receiveShadow = true; k.castShadow = true; scene.add(k);
+    })();
+
+    (function boundary() {
+      var w1 = new T3.Mesh(boxGeo(34, 1.75, 0.34), MAT.wallLow);
+      w1.position.set(-12, 0.88, -11.5); w1.castShadow = true; w1.receiveShadow = true; scene.add(w1);
+      var w2 = new T3.Mesh(boxGeo(0.34, 1.75, 20), MAT.wallLow);
+      w2.position.set(-20, 0.88, -2); w2.castShadow = true; w2.receiveShadow = true; scene.add(w2);
+      var w3 = new T3.Mesh(boxGeo(20, 1.6, 0.32), MAT.wallLow);
+      w3.position.set(22, 0.8, -8); w3.castShadow = true; w3.receiveShadow = true; scene.add(w3);
+    })();
+
+    function cypress(x, z, s, mat) {
+      var g = new T3.Group();
+      var c = new T3.Mesh(new T3.ConeGeometry(0.85 * s, 6.4 * s, 9), mat || MAT.cypress);
+      c.position.y = 3.2 * s; g.add(c);
+      var c2 = new T3.Mesh(new T3.ConeGeometry(0.55 * s, 2.2 * s, 8), mat || MAT.cypress);
+      c2.position.y = 5.6 * s; g.add(c2);
+      g.position.set(x, 0, z);
+      g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      return g;
+    }
+    function bush(x, z, s) {
+      var g = new T3.Group();
+      var t = new T3.Mesh(new T3.CylinderGeometry(0.12 * s, 0.16 * s, 1.2 * s, 6), MAT.trunk);
+      t.position.y = 0.6 * s; g.add(t);
+      [[0, 1.5, 0, 1.0], [-0.5, 1.25, 0.2, 0.66], [0.45, 1.35, -0.2, 0.7]].forEach(function (b) {
+        var m = new T3.Mesh(new T3.SphereGeometry(b[3] * s, 8, 6), MAT.foliage);
+        m.position.set(b[0] * s, b[1] * s, b[2] * s); g.add(m);
+      });
+      g.position.set(x, 0, z);
+      g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      return g;
+    }
+    /* background planting — always there, reads as an established street */
+    [[-17, -13, 1.05], [-14.5, -13.6, 0.9], [21, -9.5, 1.0], [17, -11, 0.85], [-24, -8, 1.1]].forEach(function (p) { scene.add(cypress(p[0], p[1], p[2])); });
+    [[-26, -14, 1.4], [8, -14, 1.6], [-4, -15.5, 1.5], [26, -13, 1.4], [15, -15, 1.3]].forEach(function (p) { scene.add(bush(p[0], p[1], p[2])); });
+    (function ridge() {
+      var m = new T3.Mesh(boxGeo(300, 7, 6), M(0x6F6250, 1, 0));
+      m.position.set(-20, 2.4, -70); scene.add(m);
+      var m2 = new T3.Mesh(boxGeo(220, 4.5, 6), M(0x7A6C58, 1, 0));
+      m2.position.set(40, 1.6, -58); scene.add(m2);
+    })();
+
+    /* ---------- the build ---------- */
+    /* plan: main two-storey block x[-7,1] z[-4.5,1.5] (upper cantilevers to 2.1)
+       right wing (garage) x[1,8] z[-3,1.5], single storey                     */
+    var L0 = 0.0, L1 = 3.40, L2 = 6.80, PAR = 7.18, WPAR = 3.72;
+    var COLX = [-6.62, -3.4, 0.62, 3.2, 7.62], COLZ = [-4.12, -1.4, 1.12];
+
+    /* 1 — footing pads */
+    for (var i = 0; i < COLX.length; i++) {
+      for (var j = 0; j < COLZ.length; j++) {
+        if (COLX[i] > 1.5 && COLZ[j] < -3.2) continue;
+        var f0 = 0.045 + 0.004 * (i * 3 + j);
+        B(1.25, 0.34, 1.25, MAT.concDark, COLX[i], 0.17, COLZ[j], f0, f0 + 0.055, 'rise');
+      }
+    }
+    /* 2 — ground slabs */
+    slab(-7.2, 1.2, -4.7, 1.7, 0.0, 0.42, MAT.conc, 0.115, 0.20);
+    slab(1.2, 8.2, -3.2, 1.7, 0.0, 0.42, MAT.conc, 0.145, 0.225);
+
+    /* 3 — ground-floor columns */
+    function column(x, z, y0, y1, t0, t1) { return B(0.36, y1 - y0, 0.36, MAT.conc, x, (y0 + y1) / 2, z, t0, t1, 'rise'); }
+    for (var ci = 0; ci < COLX.length; ci++) {
+      for (var cj = 0; cj < COLZ.length; cj++) {
+        var cx = COLX[ci], cz = COLZ[cj];
+        if (cx > 1.5 && cz < -3.2) continue;
+        var t0 = 0.205 + 0.012 * (ci * 3 + cj);
+        column(cx, cz, 0.4, L1, t0, t0 + 0.07);
+        /* rebar starters poking above each column, gone when the slab pours */
+        var rb = new T3.Group();
+        [[-0.1, -0.1], [0.1, -0.1], [-0.1, 0.1], [0.1, 0.1]].forEach(function (o) {
+          var r = new T3.Mesh(new T3.CylinderGeometry(0.022, 0.022, 1.05, 5), MAT.rebar);
+          r.position.set(o[0], 0.52, o[1]); rb.add(r);
+        });
+        rb.position.set(cx, L1, cz);
+        temp(rb, t0 + 0.02, t0 + 0.08, 0.325, 0.36);
+      }
+    }
+    /* 4 — first-floor beams + slab (cantilevered front edge) */
+    (function () {
+      var by = L1 - 0.28;
+      COLZ.forEach(function (z, k) { B(8.6, 0.5, 0.42, MAT.conc, -3.0, by, z, 0.30 + 0.01 * k, 0.365, 'rise'); });
+      COLX.forEach(function (x, k) { if (x > 1.5) return; B(0.42, 0.5, 6.8, MAT.conc, x, by, -1.5, 0.305 + 0.01 * k, 0.37, 'rise'); });
+      slab(-7.2, 1.2, -4.7, 2.35, L1 - 0.03, 0.34, MAT.conc, 0.345, 0.425);
+      slab(1.2, 8.2, -3.2, 1.7, L1 - 0.03, 0.34, MAT.conc, 0.365, 0.44);
+    })();
+    /* 5 — upper columns */
+    for (var ui = 0; ui < 3; ui++) {
+      for (var uj = 0; uj < 3; uj++) {
+        var ux = COLX[ui], uz = COLZ[uj];
+        var ut = 0.425 + 0.014 * (ui * 3 + uj);
+        column(ux, uz, L1 + 0.31, L2, ut, ut + 0.07);
+        var rb2 = new T3.Group();
+        [[-0.1, -0.1], [0.1, -0.1], [-0.1, 0.1], [0.1, 0.1]].forEach(function (o) {
+          var r = new T3.Mesh(new T3.CylinderGeometry(0.022, 0.022, 1.0, 5), MAT.rebar);
+          r.position.set(o[0], 0.5, o[1]); rb2.add(r);
+        });
+        rb2.position.set(ux, L2, uz);
+        temp(rb2, ut + 0.02, ut + 0.08, 0.545, 0.58);
+      }
+    }
+    /* 6 — roof slab + parapets */
+    (function () {
+      var by = L2 - 0.28;
+      COLZ.forEach(function (z, k) { B(8.6, 0.5, 0.42, MAT.conc, -3.0, by, z, 0.52 + 0.01 * k, 0.575, 'rise'); });
+      slab(-7.2, 1.2, -4.7, 2.35, L2 - 0.03, 0.34, MAT.conc, 0.555, 0.625);
+      wallX(-7.2, 1.2, -4.55, L2 + 0.31, PAR, 0.3, MAT.render, 0.60, 0.665, 'rise');
+      wallX(-7.2, 1.2, 2.2, L2 + 0.31, PAR, 0.3, MAT.render, 0.605, 0.67, 'rise');
+      wallZ(-4.7, 2.35, -7.05, L2 + 0.31, PAR, 0.3, MAT.render, 0.61, 0.675, 'rise');
+      wallZ(-4.7, 2.35, 1.05, L2 + 0.31, PAR, 0.3, MAT.render, 0.615, 0.68, 'rise');
+      /* wing parapet */
+      wallX(1.2, 8.2, -3.05, L1 + 0.31, WPAR, 0.28, MAT.render, 0.62, 0.685, 'rise');
+      wallX(1.2, 8.2, 1.56, L1 + 0.31, WPAR, 0.28, MAT.render, 0.625, 0.69, 'rise');
+      wallZ(-3.2, 1.7, 8.06, L1 + 0.31, WPAR, 0.28, MAT.render, 0.63, 0.695, 'rise');
+    })();
+
+    /* 7 — blockwork infill, then rendered finish over it */
+    function panel(kind, a, b, c, y0, y1, t0) {
+      /* kind 'x' => a,b are x extents at z=c ; kind 'z' => a,b are z extents at x=c */
+      if (kind === 'x') {
+        wallX(a, b, c, y0, y1, 0.26, MAT.block, t0, t0 + 0.055, 'rise');
+        wallX(a - 0.02, b + 0.02, c, y0, y1 + 0.01, 0.32, MAT.render, t0 + 0.115, t0 + 0.175, 'fade');
+      } else {
+        wallZ(a, b, c, y0, y1, 0.26, MAT.block, t0, t0 + 0.055, 'rise');
+        wallZ(a - 0.02, b + 0.02, c, y0, y1 + 0.01, 0.32, MAT.render, t0 + 0.115, t0 + 0.175, 'fade');
+      }
+    }
+    /* main block, ground floor */
+    panel('x', -7.2, 1.2, -4.55, 0.42, L1, 0.645);
+    panel('z', -4.7, 1.7, -7.05, 0.42, L1, 0.655);
+    panel('x', -7.2, -6.3, 1.55, 0.42, L1, 0.665);
+    panel('x', 0.3, 1.2, 1.55, 0.42, L1, 0.67);
+    /* main block, upper floor */
+    panel('x', -7.2, 1.2, -4.55, L1 + 0.31, L2, 0.675);
+    panel('z', -4.7, 2.35, -7.05, L1 + 0.31, L2, 0.685);
+    panel('x', -7.2, -6.3, 2.2, L1 + 0.31, L2, 0.69);
+    panel('x', 0.3, 1.2, 2.2, L1 + 0.31, L2, 0.695);
+    panel('x', -6.3, 0.3, 2.2, 6.32, L2, 0.70);   /* header above the ribbon window */
+    /* wing */
+    panel('x', 1.2, 8.2, -3.05, 0.42, L1, 0.66);
+    panel('z', -3.2, 1.7, 8.06, 0.42, L1, 0.67);
+    panel('x', 1.2, 1.75, 1.56, 0.42, L1, 0.675);
+    panel('x', 2.75, 4.5, 1.56, 0.42, L1, 0.68);
+    panel('x', 7.3, 8.2, 1.56, 0.42, L1, 0.685);
+    panel('x', 4.5, 7.3, 2.62, L1 - 0.34, L1, 0.695);  /* garage header */
+    panel('x', 1.75, 2.75, 2.42, L1 - 0.34, L1, 0.70); /* entry header */
+    /* stone entry blade */
+    wallZ(-0.6, 1.6, 1.3, 0.42, L1 + 0.9, 0.34, MAT.stone, 0.72, 0.79, 'rise');
+
+    /* 8 — glazing */
+    function glazing(x0, x1, z, y0, y1, t0, mullions) {
+      B(x1 - x0, y1 - y0, 0.05, MAT.glass, (x0 + x1) / 2, (y0 + y1) / 2, z, t0, t0 + 0.05, 'fade');
+      B(x1 - x0 + 0.08, 0.09, 0.14, MAT.frame, (x0 + x1) / 2, y1, z + 0.02, t0 + 0.01, t0 + 0.06, 'fade');
+      B(x1 - x0 + 0.08, 0.09, 0.14, MAT.frame, (x0 + x1) / 2, y0, z + 0.02, t0 + 0.01, t0 + 0.06, 'fade');
+      B(0.09, y1 - y0, 0.14, MAT.frame, x0, (y0 + y1) / 2, z + 0.02, t0 + 0.015, t0 + 0.065, 'fade');
+      B(0.09, y1 - y0, 0.14, MAT.frame, x1, (y0 + y1) / 2, z + 0.02, t0 + 0.015, t0 + 0.065, 'fade');
+      var n = mullions || 0;
+      for (var k = 1; k <= n; k++) {
+        var mx = x0 + (x1 - x0) * k / (n + 1);
+        B(0.07, y1 - y0, 0.12, MAT.frame, mx, (y0 + y1) / 2, z + 0.02, t0 + 0.02 + 0.006 * k, t0 + 0.075, 'fade');
+      }
+    }
+    glazing(-6.25, 0.25, 1.62, 0.45, L1 - 0.06, 0.775, 3);      /* ground floor, front */
+    glazing(-6.25, 0.25, 2.27, L1 + 0.34, 6.3, 0.80, 3);        /* upper ribbon */
+    /* side glazing on the left return */
+    B(0.05, 2.5, 3.6, MAT.glass, -7.02, L1 + 1.6, -1.0, 0.815, 0.865, 'fade');
+    B(0.12, 0.09, 3.7, MAT.frame, -7.05, L1 + 0.35, -1.0, 0.82, 0.875, 'fade');
+    B(0.12, 0.09, 3.7, MAT.frame, -7.05, L1 + 2.86, -1.0, 0.82, 0.875, 'fade');
+    /* upper balustrade — slim glass blade */
+    B(6.6, 1.02, 0.05, M(0x8FA0A8, 0.08, 0.1, { envMapIntensity: 2.2 }), -3.0, L1 + 0.85, 2.5, 0.845, 0.9, 'fade');
+    B(6.7, 0.07, 0.1, MAT.alu, -3.0, L1 + 1.38, 2.5, 0.85, 0.905, 'fade');
+    /* garage door + entry */
+    B(2.7, 2.42, 0.09, MAT.gdoor, 5.9, 1.62, 1.6, 0.83, 0.885, 'fade');
+    for (var gp = 0; gp < 5; gp++) B(2.62, 0.03, 0.03, MAT.alu, 5.9, 0.62 + gp * 0.48, 1.66, 0.845 + gp * 0.006, 0.9, 'fade');
+    B(1.0, 2.5, 0.1, MAT.door, 2.25, 1.66, 1.6, 0.835, 0.89, 'fade');
+    B(0.05, 0.9, 0.05, MAT.alu, 2.62, 1.6, 1.68, 0.865, 0.91, 'fade');
+    /* soffit lights under the cantilever + roof drip edge */
+    B(8.5, 0.06, 0.12, MAT.alu, -3.0, L2 + 0.3, 2.36, 0.86, 0.91, 'fade');
+
+    /* 9 — landscaping / handover */
+    slab(1.4, 10.5, 1.9, 9.2, 0.0, 0.1, MAT.asphalt, 0.905, 0.965);      /* driveway */
+    slab(-7.6, 1.4, 1.9, 4.2, 0.0, 0.12, MAT.gravel, 0.915, 0.97);        /* front path */
+    slab(-8.2, -7.2, -4.7, 2.4, 0.0, 0.14, MAT.gravel, 0.92, 0.975);
+    (function planting() {
+      var spots = [[-8.6, 3.0, 0.62], [-9.6, 0.4, 0.7], [11.2, 3.4, 0.66], [2.0, 5.6, 0.5]];
+      spots.forEach(function (p, k) {
+        push(cypress(p[0], p[1], p[2]), 6, 0.93 + 0.012 * k, 0.99, 'grow');
+      });
+      [[-5.0, 5.4, 0.8], [-2.0, 5.9, 0.7], [9.4, 6.0, 0.75]].forEach(function (p, k) {
+        var g = bush(p[0], p[1], p[2]);
+        push(g, 2.4, 0.935 + 0.012 * k, 0.995, 'grow');
+      });
+    })();
+
+    /* ---------- excavator (three timelapse positions) ---------- */
+    function excavator(rot) {
+      var g = new T3.Group();
+      [-0.85, 0.85].forEach(function (dz) {
+        var tr = new T3.Mesh(boxGeo(3.5, 0.78, 0.72), MAT.steel);
+        tr.position.set(0, 0.39, dz); g.add(tr);
+      });
+      var base = new T3.Mesh(boxGeo(2.5, 0.32, 1.9), MAT.steel); base.position.set(0, 0.9, 0); g.add(base);
+      var body = new T3.Mesh(boxGeo(2.6, 1.15, 1.8), MAT.yellow); body.position.set(-0.5, 1.62, 0); g.add(body);
+      var cab = new T3.Mesh(boxGeo(1.15, 1.35, 1.25), MAT.yellow); cab.position.set(0.75, 1.75, -0.2); g.add(cab);
+      var glass = new T3.Mesh(boxGeo(1.0, 0.95, 1.1), MAT.glass); glass.position.set(0.86, 1.9, -0.2); g.add(glass);
+      var boom = new T3.Mesh(boxGeo(3.9, 0.42, 0.44), MAT.yellow);
+      boom.position.set(2.1, 2.5, 0.55); boom.rotation.z = 0.62; g.add(boom);
+      var arm = new T3.Mesh(boxGeo(3.2, 0.34, 0.36), MAT.yellow);
+      arm.position.set(4.3, 1.9, 0.55); arm.rotation.z = -0.85; g.add(arm);
+      var buck = new T3.Mesh(boxGeo(0.95, 0.8, 1.0), MAT.steel);
+      buck.position.set(5.3, 0.5, 0.55); buck.rotation.z = 0.35; g.add(buck);
+      g.rotation.y = rot;
+      g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      return g;
+    }
+    (function () {
+      var a = excavator(-2.3); a.position.set(-10.5, 0, 4.2); temp(a, 0.0, 0.03, 0.12, 0.17);
+      var b = excavator(-1.15); b.position.set(11.0, 0, 4.6); temp(b, 0.15, 0.2, 0.30, 0.35);
+      var c = excavator(-2.75); c.position.set(-12.0, 0, -1.5); temp(c, 0.33, 0.38, 0.52, 0.58);
+      /* spoil heaps */
+      function heap(x, z, r, h, rot, in0, in1, out0, out1) {
+        var geo = new T3.ConeGeometry(r, h, 8); geo.translate(0, h / 2, 0); geo.scale(1.2, 1, 0.85);
+        var m = new T3.Mesh(geo, MAT.dirt); m.position.set(x, 0, z); m.rotation.y = rot;
+        var g = new T3.Group(); g.add(m); temp(g, in0, in1, out0, out1);
+      }
+      heap(-11.5, -5.5, 2.1, 1.5, 0.4, 0.02, 0.07, 0.58, 0.66);
+      heap(-8.8, -7.4, 1.5, 1.05, 1.2, 0.03, 0.09, 0.56, 0.64);
+      heap(12.5, -3.0, 1.7, 1.2, 2.1, 0.16, 0.22, 0.60, 0.68);
+      /* material stacks + skip, on site through the middle of the build */
+      function stack(x, z, rot, in0, out1) {
+        var g = new T3.Group();
+        for (var k = 0; k < 3; k++) {
+          var m = new T3.Mesh(boxGeo(1.6, 0.22, 1.1), MAT.block);
+          m.position.set(0, 0.12 + k * 0.24, 0); g.add(m);
+        }
+        g.position.set(x, 0, z); g.rotation.y = rot;
+        temp(g, in0, in0 + 0.05, out1 - 0.06, out1);
+      }
+      stack(-9.5, 6.0, 0.5, 0.20, 0.90);
+      stack(10.5, 6.6, -0.3, 0.24, 0.88);
+      stack(-11.5, 2.2, 0.9, 0.42, 0.86);
+    })();
+
+    /* ---------- scaffold on the right return while it is rendered ---------- */
+    (function () {
+      var g = new T3.Group();
+      function pole(x, z, y0, y1) {
+        var m = new T3.Mesh(boxGeo(0.08, y1 - y0, 0.08), MAT.scaff);
+        m.position.set(x, (y0 + y1) / 2, z); g.add(m);
+      }
+      function led(x0, x1, z, y) {
+        var m = new T3.Mesh(boxGeo(x1 - x0, 0.07, 0.07), MAT.scaff);
+        m.position.set((x0 + x1) / 2, y, z); g.add(m);
+      }
+      function deck(x0, x1, z, y) {
+        var m = new T3.Mesh(boxGeo(x1 - x0, 0.06, 0.9), M(0x7A6E58, 0.9, 0));
+        m.position.set((x0 + x1) / 2, y, z); g.add(m);
+      }
+      for (var x = -6.6; x <= 1.4; x += 2.0) { pole(x, 2.3, 0, 7.6); pole(x, 3.1, 0, 7.6); }
+      [2.2, 4.0, 5.8, 7.4].forEach(function (y) { led(-6.6, 1.4, 2.3, y); led(-6.6, 1.4, 3.1, y); deck(-6.6, 1.4, 2.7, y + 0.05); });
+      temp(g, 0.60, 0.66, 0.855, 0.915);
+    })();
+
+    /* ---------- per-frame ---------- */
+    function sm(x) { return x <= 0 ? 0 : x >= 1 ? 1 : x * x * x * (x * (x * 6 - 15) + 10); }
+    function cl(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+
+    function applyItems(p) {
+      for (var i = 0; i < items.length; i++) {
+        var m = items[i], u = m.userData;
+        var lp = (p - u.t0) / Math.max(1e-6, u.t1 - u.t0);
+        if (lp <= 0) { if (m.visible) m.visible = false; continue; }
+        m.visible = true;
+        var e = sm(Math.min(1, lp));
+        var done = lp >= 1;
+        if (u.mode === 'grow') {
+          var s = 0.001 + 0.999 * e;
+          m.scale.set(0.6 + 0.4 * e, s, 0.6 + 0.4 * e);
+          m.traverse(function (o) {
+            if (!o.isMesh) return;
+            o.material.opacity = Math.min(1, e * 2.2);
+            o.material.transparent = !done;
+            o.castShadow = e > 0.5;
+          });
+          continue;
+        }
+        m.material.opacity = Math.min(1, e * 2.4);
+        m.material.transparent = !done;
+        m.castShadow = e > 0.5;
+        if (u.mode === 'rise') {
+          var sy = 0.02 + 0.98 * e;
+          m.scale.y = sy;
+          m.position.y = u.base + u.h * sy / 2;
+        } else {
+          m.position.y = u.ty + 0.14 * (1 - e);
+        }
+      }
+    }
+    function applyTemps(p) {
+      for (var i = 0; i < temps.length; i++) {
+        var g = temps[i], u = g.userData;
+        if (p < u.in0 || p >= u.out1) { if (g.visible) g.visible = false; continue; }
+        g.visible = true;
+        var e = p < u.in1 ? sm((p - u.in0) / (u.in1 - u.in0))
+          : p > u.out0 ? 1 - sm((p - u.out0) / (u.out1 - u.out0)) : 1;
+        g.traverse(function (o) {
+          if (!o.isMesh) return;
+          o.material.opacity = Math.min(1, e * 1.9);
+          o.castShadow = e > 0.5;
+        });
+        g.position.y = u.ty + 0.1 * (1 - e);
+      }
+    }
+    /* light drifts through a long golden hour: the sun swings west and drops,
+       cloud passes soften the key — the cue that reads as "time passing". */
+    var cWarm = new T3.Color(0xff9a52), cGold = new T3.Color(0xffc98d), cHigh = new T3.Color(0xfff0d8);
+    var skyDay = new T3.Color(0xa8c2de), skyDusk = new T3.Color(0xd9a97e);
+    function flicker(t) { return 0.5 * Math.sin(t * 6.1) + 0.3 * Math.sin(t * 14.7 + 1.1) + 0.2 * Math.sin(t * 31.3 + 0.5); }
+    function applyLight(p, cycles) {
+      var n = cycles || 3.0;
+      var d = (p * n) % 1;                        /* several days pass over the clip */
+      var high = Math.sin(Math.PI * cl(d));       /* 0 at dawn/dusk, 1 at midday */
+      var az = Math.PI * (0.62 + 0.78 * d);
+      var elev = 0.13 + 0.62 * high;
+      var R = 30;
+      sun.position.set(Math.cos(az) * R, R * Math.sin(elev) + 1.5, Math.sin(az) * R * 0.42 + 12.0);
+      var cloud = cl(0.66 + 0.34 * flicker(p * 4.0));
+      sun.intensity = (1.05 + 1.75 * high) * (0.6 + 0.4 * cloud);
+      sun.color.copy(cWarm).lerp(cGold, high).lerp(cHigh, high * high * 0.7);
+      sun.shadow.radius = 3.5 + 7 * (1 - cloud) + 4 * (1 - high);
+      hemi.intensity = 0.34 + 0.30 * high + 0.16 * (1 - cloud);
+      hemi.color.copy(skyDusk).lerp(skyDay, high);
+      bounce.intensity = 0.16 + 0.2 * (1 - high);
+      renderer.toneMappingExposure = 0.97 + 0.13 * (1 - high) - 0.08 * (1 - cloud);
+      scene.fog.color.copy(skyDusk).lerp(skyDay, high * 0.6);
+      dome.material.color.setScalar(0.82 + 0.24 * high);
+    }
+
+    function resize(w, h) {
+      renderer.setSize(w, h, false);
+      var a = w / Math.max(1, h);
+      camera.aspect = a;
+      camera.fov = a < 1 ? Math.min(46, 34 * (1 + (1 / a - 1) * 0.16)) : 34;
+      var pull = a < 1 ? Math.min(1.8, 1 + (1 / a - 1) * 0.55) : 1;
+      camera.position.copy(CAM.clone().sub(LOOK).multiplyScalar(pull).add(LOOK));
+      camera.lookAt(LOOK);
+      camera.updateProjectionMatrix();
+    }
+    function render(p, cycles) {
+      var q = cl(p);
+      applyItems(q); applyTemps(q); applyLight(q, cycles);
+      renderer.render(scene, camera);
+    }
+    resize(1920, 1080);
+    return { render: render, resize: resize, renderer: renderer, scene: scene, camera: camera };
+  }
+  window.VillaScene = { create: create };
+})();
