@@ -49,6 +49,11 @@
       w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
       if (!force && w === lastW && h === lastH) return false;
       lastW = w; lastH = h;
+      // never let inline px sizing linger on the canvas — CSS owns display size
+      if (canvas.style.width || canvas.style.height) {
+        canvas.style.removeProperty('width');
+        canvas.style.removeProperty('height');
+      }
       scene.resize(w, h);
       return true;
     }
