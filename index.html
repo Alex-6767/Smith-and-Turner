@@ -23,6 +23,7 @@ html, body { overflow-x: clip; }
 
 /* ================= HEADER — maintained + clearly delineated ================= */
 .hd {
+  z-index: 60;                 /* above the pinned hero stage (z-index 1) */
   background: #BEBCB5;
   border-bottom: 1px solid rgba(20,20,20,.22);
   box-shadow: 0 1px 14px rgba(0,0,0,.10);
@@ -43,12 +44,14 @@ html, body { overflow-x: clip; }
   background: linear-gradient(180deg,#2b4364 0%,#7d92a8 30%,#e0c6a4 46%,#8e8471 56%,#5c5347 100%); }
 @supports not (height: 100svh) { .hero { height: 240vh; } }
 
-/* pinned by NATIVE sticky — compositor driven, cannot jump or lag.
+/* Pinned by JS with position:fixed + transform (compositor-driven, no reflow).
+   The stage is moved to be a direct child of <body> so no ancestor can
+   constrain, clip, or unstick it.
    box-sizing is forced here so height:100svh is the FINAL height (no padding
    inflating it past the viewport). Header clearance lives on .hero__in. */
 .hero__stage {
   box-sizing: border-box;
-  position: -webkit-sticky; position: sticky; top: 0;
+  position: fixed; top: 0; left: 0;
   width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important;
   height: 100svh; max-height: 100svh; overflow: hidden;
   background: linear-gradient(180deg,#2b4364 0%,#7d92a8 30%,#e0c6a4 46%,#8e8471 56%,#5c5347 100%);
@@ -896,8 +899,8 @@ if (!window.THREE) {
     var pnum   = document.querySelector('.hero-prog__num');
     var prog   = document.querySelector('.hero-prog');
     if (!hero || !stage || !canvas) return;
-    window.__HERO_BUILD = 'v8-fullbleed';
-    if (window.console) console.log('[hero] build v8-fullbleed active');
+    window.__HERO_BUILD = 'v9-detached';
+    if (window.console) console.log('[hero] build v9-detached active');
 
     // Force the canvas box IMMEDIATELY, before any scene/CDN work. Even if
     // everything after this fails, the canvas can never be a stray small box.
@@ -908,7 +911,37 @@ if (!window.THREE) {
       s.setProperty('width','100%','important'); s.setProperty('height','100%','important');
       s.setProperty('display','block','important');
     })();
-    try { forceFullBleed(); } catch (e) {}
+    /* ---- DETACH: move the stage to be a direct child of <body>. No ancestor
+       (max-width, overflow, transform) can then constrain it, clip it, or break
+       its pinning. The .hero section stays in the flow as the scroll track. ---- */
+    try {
+      if (stage.parentNode !== document.body) document.body.appendChild(stage);
+      var ss = stage.style;
+      ss.setProperty('position', 'fixed', 'important');
+      ss.setProperty('top', '0', 'important');
+      ss.setProperty('left', '0', 'important');
+      ss.setProperty('width', '100vw', 'important');
+      ss.setProperty('max-width', '100vw', 'important');
+      ss.setProperty('margin', '0', 'important');
+      ss.setProperty('z-index', '1', 'important');
+      ss.setProperty('will-change', 'transform', 'important');
+    } catch (e) {}
+    function stageH() { return window.innerHeight; }
+    function pinStage() {
+      var vh = stageH();
+      stage.style.setProperty('height', vh + 'px', 'important');
+      var track = hero.offsetHeight - vh;
+      var top = hero.getBoundingClientRect().top;
+      var off;
+      if (track <= 0) off = top;
+      else if (top >= 0) off = top;              // before the hero
+      else if (-top <= track) off = 0;           // pinned
+      else off = track + top;                    // releasing upward
+      // transform only -> compositor driven, no reflow, no jank
+      stage.style.setProperty('transform', 'translate3d(0,' + off + 'px,0)', 'important');
+      var vis = (off > -vh - 2 && off < vh + 2);
+      stage.style.setProperty('visibility', vis ? 'visible' : 'hidden', 'important');
+    }
 
     function bail(msg) {
       window.__HERO_ERR = String(msg);
@@ -1014,7 +1047,7 @@ if (!window.THREE) {
     }
 
     var target = 0, shown = -1, dirty = true;
-    function onScroll() { target = frac(); dirty = true; }
+    function onScroll() { target = frac(); pinStage(); dirty = true; }
     document.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', function () { resize(true); onScroll(); });
     window.addEventListener('orientationchange', function () {
@@ -1027,7 +1060,7 @@ if (!window.THREE) {
       document.fonts.ready.then(function () { resize(true); dirty = true; });
     }
 
-    resize(true); onScroll();
+    pinStage(); resize(true); onScroll();
     setTimeout(function () { resize(true); onScroll(); }, 140);
     setTimeout(function () { resize(true); onScroll(); }, 520);
 
@@ -1048,6 +1081,7 @@ if (!window.THREE) {
 
       // continuous self-heal (~4x/sec): guarantees the canvas keeps filling the
       // stage no matter what stylesheet or cached script is in play
+      pinStage();
       if ((++vTick % 15) === 0 && verify()) dirty = true;
 
       if (shown < 0) shown = target;
