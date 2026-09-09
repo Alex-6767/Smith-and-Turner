@@ -15,20 +15,28 @@ html, body { overflow-x: clip; }
 .mnav { background: #BEBCB5; }
 
 /* ================= SCROLL TRACK ================= */
-.hero { position: relative; height: 240svh; background: #0f1114; }
+.hero { position: relative; height: 240svh;
+  background: linear-gradient(180deg,#2b4364 0%,#7d92a8 30%,#e0c6a4 46%,#8e8471 56%,#5c5347 100%); }
 @supports not (height: 100svh) { .hero { height: 240vh; } }
 
-/* pinned by NATIVE sticky — compositor driven, cannot jump or lag */
+/* pinned by NATIVE sticky — compositor driven, cannot jump or lag.
+   box-sizing is forced here so height:100svh is the FINAL height (no padding
+   inflating it past the viewport). Header clearance lives on .hero__in. */
 .hero__stage {
+  box-sizing: border-box;
   position: -webkit-sticky; position: sticky; top: 0;
-  height: 100svh; overflow: hidden; background: #0f1114;
+  height: 100svh; max-height: 100svh; overflow: hidden;
+  background: linear-gradient(180deg,#2b4364 0%,#7d92a8 30%,#e0c6a4 46%,#8e8471 56%,#5c5347 100%);
   display: flex; flex-direction: column; justify-content: flex-end;
-  /* reserve the header band so hero copy can never ride up underneath it */
-  padding-top: clamp(88px, 13svh, 128px);
 }
-@supports not (height: 100svh) { .hero__stage { height: 100vh; } }
+@supports not (height: 100svh) { .hero__stage { height: 100vh; max-height: 100vh; } }
 
-.hero__stage #hero-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* canvas display size is owned by CSS only */
+.hero__stage #hero-gl {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; display: block; z-index: 0;
+}
+
 
 .hero__stage .hero__scrim {
   position: absolute; inset: 0; pointer-events: none; z-index: 1;
@@ -40,7 +48,9 @@ html, body { overflow-x: clip; }
 
 /* ================= COPY — holds its opacity throughout ================= */
 .hero__stage .hero__in {
+  box-sizing: border-box;
   position: relative; z-index: 3; width: 100%;
+  padding-top: clamp(84px, 12svh, 124px);   /* header clearance lives here */
   padding-bottom: clamp(74px, 12svh, 132px);
   will-change: opacity;
 }

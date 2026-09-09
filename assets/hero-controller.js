@@ -37,14 +37,18 @@
     function cl(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
     function smooth(x) { return x <= 0 ? 0 : x >= 1 ? 1 : x * x * x * (x * (x * 6 - 15) + 10); }
 
-    /* ---- canvas sizing (rotate / URL-bar changes) ---- */
+    /* ---- drawing-buffer sizing only. The canvas DISPLAY size is owned by CSS
+       (absolute, inset:0, 100%/100%) — never set inline px here, or a bad
+       measurement can lock the canvas to a wrong box permanently. ---- */
     var lastW = 0, lastH = 0;
     function resize(force) {
-      var r = stage.getBoundingClientRect();
-      var w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+      var w = stage.clientWidth  || 0;
+      var h = stage.clientHeight || 0;
+      // sanity guard: if layout isn't settled, fall back to the viewport
+      if (w < 40 || h < 40) { w = window.innerWidth; h = window.innerHeight; }
+      w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
       if (!force && w === lastW && h === lastH) return false;
       lastW = w; lastH = h;
-      canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
       scene.resize(w, h);
       return true;
     }
