@@ -35,13 +35,13 @@ html, body { overflow-x: clip; }
 /* FULL-BLEED ESCAPE: break out of any max-width/padding on a parent
    (main, section, container) that would otherwise trap the hero in a column. */
 .hero {
+  background: #BEBCB5 !important;   /* track behind the stage: no dark flash, seamless join */
   width: 100vw !important;
   max-width: 100vw !important;
   margin-left: calc(50% - 50vw) !important;
   margin-right: calc(50% - 50vw) !important;
   padding-left: 0 !important; padding-right: 0 !important;
-  position: relative; height: 240svh;
-  background: linear-gradient(180deg,#2b4364 0%,#7d92a8 30%,#e0c6a4 46%,#8e8471 56%,#5c5347 100%); }
+  position: relative; height: 240svh; }
 @supports not (height: 100svh) { .hero { height: 240vh; } }
 
 /* Pinned by JS with position:fixed + transform (compositor-driven, no reflow).
@@ -74,8 +74,9 @@ html, body { overflow-x: clip; }
 .hero__stage .hero__scrim {
   position: absolute; inset: 0; pointer-events: none; z-index: 1;
   background:
-    linear-gradient(180deg, rgba(10,12,15,.40) 0%, rgba(10,12,15,0) 24%),
-    linear-gradient(0deg,  rgba(10,12,15,.74) 0%, rgba(10,12,15,.30) 26%, rgba(10,12,15,0) 54%);
+    linear-gradient(180deg, rgba(10,12,15,.30) 0%, rgba(10,12,15,0) 22%),
+    linear-gradient(0deg,  rgba(40,40,36,.46) 0%, rgba(40,40,36,.18) 24%, rgba(40,40,36,0) 50%),
+    linear-gradient(0deg,  #BEBCB5 0%, rgba(190,188,181,0) 4%);   /* blends into next section */
 }
 .hero__stage .hero__vign, .hero__stage .hero__grain { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 
@@ -113,12 +114,12 @@ html, body { overflow-x: clip; }
 .hero__stage .hero__in,
 .hero__stage .hero__in .label { color: #F3F1EC; }
 .hero__stage .hero__in h1 { color: #fff; text-shadow: 0 2px 30px rgba(0,0,0,.34); }
-.hero__stage .hero__in h1 em { color: rgba(255,255,255,.70); }
+.hero__stage .hero__in h1 em { color: #BEBCB5 !important; }
 .hero__stage .hero__in .hero__sub { color: rgba(243,241,236,.92); text-shadow: 0 1px 22px rgba(0,0,0,.55); }
 .hero__stage .hero__eyebrow { color: rgba(243,241,236,.82); }
 .hero__stage .hero__eyebrow::before { background: rgba(243,241,236,.7); }
-.hero__stage .btn--line { border-color: rgba(255,255,255,.78); color: #fff; }
-.hero__stage .btn--solid { background: #F3F1EC; color: #14161A; }
+.hero__stage .btn--line { border-color: #BEBCB5 !important; color: #BEBCB5 !important; }
+.hero__stage .btn--solid { background: #BEBCB5 !important; color: #16171B !important; border: 1px solid #BEBCB5 !important; }
 
 /* scale the block down as the viewport gets shorter so it always fits */
 @media (max-height: 900px) {
@@ -131,52 +132,95 @@ html, body { overflow-x: clip; }
   .hero__stage .hero__in .hero__sub { font-size: 15px; max-width: 46ch; margin-bottom: 18px; }
 }
 
-/* ================= LANDSCAPE PHONE / SHORT VIEWPORTS ================= */
+/* ================= LANDSCAPE PHONE / SHORT VIEWPORTS =================
+   Everything stays VISIBLE — eyebrow, headline, paragraph and buttons — just
+   scaled to viewport height so nothing is hidden or clipped. */
 @media (orientation: landscape) and (max-height: 560px) {
-  .hero { height: 210svh; }
-  .hero__stage .hero__in { padding-bottom: clamp(38px, 7svh, 62px); }
-  .hero__stage .hero__in h1 { font-size: clamp(24px, 4.6vh, 40px); line-height: .98; margin-bottom: 10px; }
-  .hero__stage .hero__in .hero__sub { display: none !important; }
-  .hero__stage .hero__in .hero__cta { gap: 10px; }
-  .hero__stage .hero__in .btn { padding: 10px 16px; font-size: 12px; }
-  .hero__stage .hero__eyebrow { margin-bottom: 10px; font-size: 11px; }
+  .hero { height: 200svh; }
+  .hero__stage .hero__in {
+    padding-top: clamp(52px, 11svh, 74px) !important;
+    padding-bottom: clamp(16px, 4svh, 30px) !important;
+  }
+  .hero__stage .hero__in .hero__eyebrow {
+    display: block !important; font-size: 9px; letter-spacing: .18em;
+    margin-bottom: 6px !important; padding-left: 34px;
+  }
+  .hero__stage .hero__in .hero__eyebrow::before { width: 24px; }
+  .hero__stage .hero__in h1 {
+    font-size: clamp(17px, 4.3vh, 32px) !important; line-height: .98; margin-bottom: 8px !important;
+  }
+  .hero__stage .hero__in .hero__sub {
+    display: block !important;
+    font-size: clamp(10.5px, 2.05vh, 13px) !important; line-height: 1.36;
+    max-width: 62ch; margin-bottom: 10px !important;
+  }
+  .hero__stage .hero__in .hero__cta { gap: 8px; }
+  .hero__stage .hero__in .btn { padding: 7px 13px; font-size: 10px; letter-spacing: .1em; }
 }
-@media (orientation: landscape) and (max-height: 420px) {
-  .hero__stage .hero__in h1 { font-size: clamp(20px, 5vh, 30px); }
-  .hero__stage .hero__eyebrow { display: none !important; }
+@media (orientation: landscape) and (max-height: 430px) {
+  .hero__stage .hero__in h1 { font-size: clamp(15px, 3.9vh, 25px) !important; }
+  .hero__stage .hero__in .hero__sub { font-size: clamp(9.5px, 1.9vh, 11.5px) !important; line-height: 1.3; }
+  .hero__stage .hero__in .btn { padding: 6px 11px; font-size: 9px; }
 }
 
-/* ================= PROGRESS INDICATOR — clearly visible ================= */
+/* ================= PROGRESS INDICATOR — small, refined, animated =========
+   Hairline rule with a soft gradient fill and a travelling marker. Sits tight
+   to the edge so it never clashes with the hero copy. */
 .hero-prog {
-  position: absolute; z-index: 4; right: clamp(14px, 3vw, 38px);
+  position: absolute; z-index: 4;
+  right: clamp(9px, 1.8vw, 22px);
   top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  pointer-events: none; transition: opacity .3s ease;
-}
-.hero-prog__track {
-  position: relative; width: 3px; border-radius: 3px;
-  height: clamp(96px, 20svh, 168px);
-  background: rgba(255,255,255,.30);
-  box-shadow: 0 1px 10px rgba(0,0,0,.35);
-}
-.hero-prog__bar {
-  position: absolute; inset: 0; border-radius: 3px; background: #fff;
-  transform: scaleY(0); transform-origin: top;
-  box-shadow: 0 0 12px rgba(255,255,255,.55);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none; transition: opacity .35s ease;
 }
 .hero-prog__num {
-  font-family: "Space Mono", monospace; font-weight: 700;
-  font-size: 15px; letter-spacing: .06em; color: #fff;
-  text-shadow: 0 1px 12px rgba(0,0,0,.6);
+  font-family: "Space Mono", monospace; font-weight: 400;
+  font-size: 9.5px; letter-spacing: .06em; color: rgba(255,255,255,.72);
+  text-shadow: 0 1px 6px rgba(0,0,0,.45); font-variant-numeric: tabular-nums;
 }
-.hero-prog__num::after { content: "%"; font-size: 9px; opacity: .75; margin-left: 1px; vertical-align: super; }
+.hero-prog__num::after { content: "%"; font-size: 6.5px; opacity: .6; margin-left: 1px; vertical-align: super; }
+.hero-prog__track {
+  position: relative; width: 1px; border-radius: 1px;
+  height: clamp(54px, 11svh, 88px);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.30), rgba(255,255,255,.10));
+}
+.hero-prog__bar {
+  position: absolute; inset: 0; border-radius: 1px;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), #fff);
+  transform: scaleY(0); transform-origin: top;
+}
+/* travelling marker rides the end of the fill */
+.hero-prog__bar::after {
+  content: ""; position: absolute; left: 50%; bottom: 0;
+  width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 6px rgba(255,255,255,.8);
+}
+/* gentle pulse before the user starts scrolling */
+.hero-prog__track::after {
+  content: ""; position: absolute; left: 50%; top: 0; margin-left: -1.5px;
+  width: 3px; height: 14px; border-radius: 2px; background: rgba(255,255,255,.5);
+  animation: heroCue 2.4s cubic-bezier(.6,0,.35,1) infinite;
+}
+@keyframes heroCue {
+  0%   { transform: translateY(0);    opacity: 0; }
+  20%  { opacity: .9; }
+  75%  { transform: translateY(calc(clamp(54px, 11svh, 88px) - 14px)); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 0; }
+}
+.hero-prog.is-active .hero-prog__track::after { display: none; }   /* pulse stops once scrolling */
 .hero-prog__lbl {
   writing-mode: vertical-rl; text-orientation: mixed;
   font-family: "Space Mono", monospace; text-transform: uppercase;
-  font-size: 10px; letter-spacing: .28em; color: rgba(255,255,255,.85);
-  text-shadow: 0 1px 10px rgba(0,0,0,.6);
+  font-size: 7.5px; letter-spacing: .3em; color: rgba(255,255,255,.5);
+  text-shadow: 0 1px 6px rgba(0,0,0,.4);
 }
-@media (max-height: 620px) { .hero-prog__lbl { display: none; } }
+/* keep it clear of the copy on phones and short screens */
+@media (max-width: 900px), (max-height: 620px) { .hero-prog__lbl { display: none; } }
+@media (orientation: landscape) and (max-height: 560px) {
+  .hero-prog { right: 8px; gap: 6px; }
+  .hero-prog__track { height: clamp(34px, 9vh, 50px); }
+  .hero-prog__num { font-size: 8.5px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .hero { height: 100svh; }
@@ -922,8 +966,8 @@ if (!window.THREE) {
     var pnum   = document.querySelector('.hero-prog__num');
     var prog   = document.querySelector('.hero-prog');
     if (!hero || !stage || !canvas) return;
-    window.__HERO_BUILD = 'v10-copy';
-    if (window.console) console.log('[hero] build v10-copy active');
+    window.__HERO_BUILD = 'v11-polish';
+    if (window.console) console.log('[hero] build v11-polish active');
 
     // Force the canvas box IMMEDIATELY, before any scene/CDN work. Even if
     // everything after this fails, the canvas can never be a stray small box.
@@ -973,8 +1017,9 @@ if (!window.THREE) {
       else off = track + top;                    // releasing upward
       // transform only -> compositor driven, no reflow, no jank
       stage.style.setProperty('transform', 'translate3d(0,' + off + 'px,0)', 'important');
-      var vis = (off > -vh - 2 && off < vh + 2);
-      stage.style.setProperty('visibility', vis ? 'visible' : 'hidden', 'important');
+      // No visibility toggling: a fixed element translated fully off-screen is
+      // already invisible, and toggling it caused a black flash on scroll-up.
+      stage.style.setProperty('pointer-events', (off === 0 ? 'auto' : 'none'), 'important');
     }
 
     function bail(msg) {
@@ -1146,7 +1191,11 @@ if (!window.THREE) {
         lastPct = pct;
         if (pnum) pnum.textContent = (pct < 10 ? '0' : '') + pct;
       }
-      if (prog) prog.style.opacity = (1 - smooth(cl((f - 0.94) / 0.06))).toFixed(3);
+      if (prog) {
+        prog.style.opacity = (1 - smooth(cl((f - 0.94) / 0.06))).toFixed(3);
+        if (b > 0.015) prog.classList.add('is-active');
+        else prog.classList.remove('is-active');
+      }
     }
     requestAnimationFrame(loop);
   }
