@@ -74,8 +74,10 @@ html, body { overflow-x: clip; }
 .hero__stage .hero__scrim {
   position: absolute; inset: 0; pointer-events: none; z-index: 1;
   background:
+    /* soft pool of shade anchored to the copy corner — lifts contrast with no visible edge */
+    radial-gradient(135% 105% at 0% 100%, rgba(18,19,16,.70) 0%, rgba(18,19,16,.42) 34%, rgba(18,19,16,0) 68%),
     linear-gradient(180deg, rgba(10,12,15,.30) 0%, rgba(10,12,15,0) 22%),
-    linear-gradient(0deg,  rgba(40,40,36,.46) 0%, rgba(40,40,36,.18) 24%, rgba(40,40,36,0) 50%),
+    linear-gradient(0deg,  rgba(34,34,30,.44) 0%, rgba(34,34,30,.16) 26%, rgba(34,34,30,0) 52%),
     linear-gradient(0deg,  #BEBCB5 0%, rgba(190,188,181,0) 4%);   /* blends into next section */
 }
 .hero__stage .hero__vign, .hero__stage .hero__grain { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
@@ -113,12 +115,12 @@ html, body { overflow-x: clip; }
 }
 .hero__stage .hero__in,
 .hero__stage .hero__in .label { color: #F3F1EC; }
-.hero__stage .hero__in h1 { color: #fff; text-shadow: 0 2px 30px rgba(0,0,0,.34); }
-.hero__stage .hero__in h1 em { color: #BEBCB5 !important; }
-.hero__stage .hero__in .hero__sub { color: rgba(243,241,236,.92); text-shadow: 0 1px 22px rgba(0,0,0,.55); }
-.hero__stage .hero__eyebrow { color: rgba(243,241,236,.82); }
+.hero__stage .hero__in h1 { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.34), 0 3px 26px rgba(0,0,0,.52); }
+.hero__stage .hero__in h1 em { color: #D8D5CC !important; text-shadow: 0 1px 2px rgba(0,0,0,.42), 0 3px 24px rgba(0,0,0,.55); }
+.hero__stage .hero__in .hero__sub { color: #F2F0EA; text-shadow: 0 1px 2px rgba(0,0,0,.45), 0 2px 18px rgba(0,0,0,.6); }
+.hero__stage .hero__eyebrow { color: #E7E4DC; text-shadow: 0 1px 8px rgba(0,0,0,.55); }
 .hero__stage .hero__eyebrow::before { background: rgba(243,241,236,.7); }
-.hero__stage .btn--line { border-color: #BEBCB5 !important; color: #BEBCB5 !important; }
+.hero__stage .btn--line { border-color: #D8D5CC !important; color: #F2F0EA !important; background: rgba(20,21,18,.28) !important; }
 .hero__stage .btn--solid { background: #BEBCB5 !important; color: #16171B !important; border: 1px solid #BEBCB5 !important; }
 
 /* scale the block down as the viewport gets shorter so it always fits */
@@ -222,9 +224,53 @@ html, body { overflow-x: clip; }
   .hero-prog__num { font-size: 8.5px; }
 }
 
+/* ================= ANIMATED SCROLL CUE (mouse + wheel + chevron) ========= */
+.hero-scroll {
+  position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
+  bottom: clamp(14px, 3svh, 30px);
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  pointer-events: none; transition: opacity .4s ease;
+}
+.hero-scroll__mouse {
+  position: relative; display: block;
+  width: 21px; height: 33px; border-radius: 11px;
+  border: 1.5px solid rgba(240,238,231,.85);
+  box-shadow: 0 2px 12px rgba(0,0,0,.32);
+}
+.hero-scroll__wheel {
+  position: absolute; left: 50%; top: 6px; margin-left: -1.5px;
+  width: 3px; height: 6px; border-radius: 2px; background: #F0EEE7;
+  animation: heroWheel 1.9s cubic-bezier(.62,.02,.35,1) infinite;
+}
+@keyframes heroWheel {
+  0%   { transform: translateY(0);    opacity: 0; }
+  15%  { opacity: 1; }
+  55%  { transform: translateY(13px); opacity: 1; }
+  80%  { transform: translateY(15px); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 0; }
+}
+.hero-scroll__chev {
+  display: block; width: 9px; height: 9px;
+  border-right: 1.5px solid rgba(240,238,231,.8);
+  border-bottom: 1.5px solid rgba(240,238,231,.8);
+  transform: rotate(45deg);
+  animation: heroChev 1.9s cubic-bezier(.62,.02,.35,1) infinite;
+}
+@keyframes heroChev {
+  0%,20% { opacity: 0; transform: rotate(45deg) translate(-2px,-2px); }
+  55%    { opacity: .95; transform: rotate(45deg) translate(0,0); }
+  85%,100%{ opacity: 0; transform: rotate(45deg) translate(2px,2px); }
+}
+.hero-scroll__txt {
+  font-family: "Space Mono", monospace; text-transform: uppercase;
+  font-size: 8.5px; letter-spacing: .34em; color: rgba(240,238,231,.78);
+  text-shadow: 0 1px 8px rgba(0,0,0,.5); padding-left: .34em;
+}
+@media (orientation: landscape) and (max-height: 560px) { .hero-scroll { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .hero { height: 100svh; }
-  .hero-prog { display: none; }
+  .hero-prog, .hero-scroll { display: none; }
 }
 
 </style>
@@ -272,6 +318,12 @@ html, body { overflow-x: clip; }
 <span class="hero-prog__num">00</span>
 <span class="hero-prog__track"><span class="hero-prog__bar"></span></span>
 <span class="hero-prog__lbl">Scroll to explore</span>
+</div>
+
+<div class="hero-scroll" aria-hidden="true">
+<span class="hero-scroll__mouse"><span class="hero-scroll__wheel"></span></span>
+<span class="hero-scroll__chev"></span>
+<span class="hero-scroll__txt">Scroll</span>
 </div>
 
 <div class="wrap hero__in">
@@ -965,9 +1017,10 @@ if (!window.THREE) {
     var pbar   = document.querySelector('.hero-prog__bar');
     var pnum   = document.querySelector('.hero-prog__num');
     var prog   = document.querySelector('.hero-prog');
+    var cue    = document.querySelector('.hero-scroll');
     if (!hero || !stage || !canvas) return;
-    window.__HERO_BUILD = 'v11-polish';
-    if (window.console) console.log('[hero] build v11-polish active');
+    window.__HERO_BUILD = 'v12-cue';
+    if (window.console) console.log('[hero] build v12-cue active');
 
     // Force the canvas box IMMEDIATELY, before any scene/CDN work. Even if
     // everything after this fails, the canvas can never be a stray small box.
@@ -1191,6 +1244,7 @@ if (!window.THREE) {
         lastPct = pct;
         if (pnum) pnum.textContent = (pct < 10 ? '0' : '') + pct;
       }
+      if (cue) cue.style.opacity = (1 - smooth(cl(f / 0.07))).toFixed(3);
       if (prog) {
         prog.style.opacity = (1 - smooth(cl((f - 0.94) / 0.06))).toFixed(3);
         if (b > 0.015) prog.classList.add('is-active');
