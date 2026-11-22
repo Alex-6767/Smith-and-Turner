@@ -227,6 +227,28 @@ html, body { overflow-x: clip; }
 }
 
 /* ================= ANIMATED SCROLL CUE (mouse + wheel + chevron) ========= */
+.hero-chapter {
+  position: absolute; z-index: 4;
+  right: clamp(1.25rem, 5vw, 3.5rem); bottom: clamp(18px, 5vh, 52px);
+  display: flex; flex-direction: column; align-items: flex-end; gap: 7px;
+  text-align: right; pointer-events: none; max-width: min(34ch, 42vw);
+  transition: opacity .34s ease, transform .34s ease;
+}
+.hero-chapter__k {
+  font-family: "Space Mono", monospace; font-size: clamp(8px, 1vw, 10px);
+  letter-spacing: .26em; text-transform: uppercase;
+  color: rgba(255,255,255,.76); display: flex; flex-direction: row-reverse;
+  align-items: center; gap: .7em;
+  text-shadow: 0 1px 8px rgba(0,0,0,.55);
+}
+.hero-chapter__k::before { content: ""; width: 1.5rem; height: 1px; background: rgba(255,255,255,.5); }
+.hero-chapter__t {
+  font-family: "Archivo", sans-serif; font-weight: 800; text-transform: uppercase;
+  font-size: clamp(.9rem, .55rem + 1vw, 1.42rem); letter-spacing: -.01em; line-height: 1.06;
+  color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,.55); text-wrap: balance;
+}
+.hero-chapter.is-swap { opacity: 0; transform: translateY(7px); }
+@media (max-height: 620px), (max-width: 760px) { .hero-chapter { display: none; } }
 .hero-scroll {
   position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
   bottom: clamp(14px, 3svh, 30px);
@@ -320,6 +342,11 @@ html, body { overflow-x: clip; }
 <span class="hero-prog__num">00</span>
 <span class="hero-prog__track"><span class="hero-prog__bar"></span></span>
 <span class="hero-prog__lbl">Scroll to explore</span>
+</div>
+
+<div class="hero-chapter" aria-hidden="true">
+<span class="hero-chapter__k">Site works</span>
+<span class="hero-chapter__t">Set out and cut to level.</span>
 </div>
 
 <div class="hero-scroll" aria-hidden="true">
@@ -441,31 +468,67 @@ if (!window.THREE) {
     renderer.toneMappingExposure = 1.0;
 
     var scene = new T3.Scene();
-    scene.fog = new T3.Fog(0xC0A98C, 78, 210);
+    scene.fog = new T3.Fog(0xC0A98C, 130, 430);
     var camera = new T3.PerspectiveCamera(34, 16 / 9, 0.1, 400);
     var CAM = new T3.Vector3(17.5, 5.6, 20.5), LOOK = new T3.Vector3(-0.4, 3.1, -0.6);
     camera.position.copy(CAM); camera.lookAt(LOOK);
 
     /* ---------- dusk sky + IBL ---------- */
     function skyTexture() {
-      var c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+      /* 2K equirect with a true sun disc and halo. The disc is what puts a
+         sharp, believable highlight on glass, chrome and wet concrete - a flat
+         gradient can only ever give a dull sheen. */
+      var W = 2048, H = 1024;
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
       var x = c.getContext('2d');
-      var g = x.createLinearGradient(0, 0, 0, 512);
-      g.addColorStop(0.00, '#28466f');
-      g.addColorStop(0.22, '#5b7ea3');
-      g.addColorStop(0.38, '#9fb2c4');
-      g.addColorStop(0.46, '#e3c9a6');
-      g.addColorStop(0.505, '#f0d3ab');
-      g.addColorStop(0.53, '#8e8471');
-      g.addColorStop(1.00, '#5c5347');
-      x.fillStyle = g; x.fillRect(0, 0, 1024, 512);
-      for (var i = 0; i < 120; i++) {
-        var cy = 90 + Math.random() * 150, cx = Math.random() * 1024;
-        x.globalAlpha = 0.04 + Math.random() * 0.09;
-        x.fillStyle = cy > 200 ? '#ffd9a8' : '#ffffff';
-        x.beginPath(); x.ellipse(cx, cy, 70 + Math.random() * 240, 6 + Math.random() * 20, 0, 0, 7); x.fill();
+      var g = x.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0.00, '#12305a');
+      g.addColorStop(0.18, '#36618f');
+      g.addColorStop(0.32, '#6a92b8');
+      g.addColorStop(0.42, '#9ab6cf');
+      g.addColorStop(0.468, '#c9cfcd');
+      g.addColorStop(0.488, '#e9d3ab');
+      g.addColorStop(0.499, '#fae2b6');
+      g.addColorStop(0.508, '#b08f6f');
+      g.addColorStop(0.55, '#6f6757');
+      g.addColorStop(1.00, '#453e36');
+      x.fillStyle = g; x.fillRect(0, 0, W, H);
+
+      /* high cloud banding, thinner and more varied than before */
+      for (var i = 0; i < 420; i++) {
+        var cy = 60 + Math.random() * 400, cx = Math.random() * W;
+        var near = (cy - 60) / 400;                    /* 0 high, 1 near horizon */
+        x.globalAlpha = (0.05 + Math.random() * 0.17) * (0.45 + 0.55 * near);
+        x.fillStyle = near > 0.78 ? '#ffcf9b' : near > 0.55 ? '#f6e4d2' : '#f2f7fb';
+        x.beginPath();
+        x.ellipse(cx, cy, 70 + Math.random() * 400,
+                  3 + Math.random() * (10 + 22 * (1 - near)), 0, 0, 7);
+        x.fill();
       }
       x.globalAlpha = 1;
+
+      /* sun: broad atmospheric halo, then the disc itself */
+      var sx = W * 0.615, sy = H * 0.468;
+      var halo = x.createRadialGradient(sx, sy, 0, sx, sy, 420);
+      halo.addColorStop(0.00, 'rgba(255,244,222,0.90)');
+      halo.addColorStop(0.07, 'rgba(255,230,186,0.52)');
+      halo.addColorStop(0.26, 'rgba(255,211,158,0.20)');
+      halo.addColorStop(0.60, 'rgba(255,198,144,0.07)');
+      halo.addColorStop(1.00, 'rgba(255,190,138,0)');
+      x.fillStyle = halo; x.fillRect(sx - 420, sy - 420, 840, 840);
+      var disc = x.createRadialGradient(sx, sy, 0, sx, sy, 30);
+      disc.addColorStop(0.00, '#fffdf6');
+      disc.addColorStop(0.62, '#fff3d6');
+      disc.addColorStop(1.00, 'rgba(255,228,176,0)');
+      x.fillStyle = disc; x.beginPath(); x.arc(sx, sy, 30, 0, 7); x.fill();
+
+      /* warm haze sitting on the horizon line */
+      var hz = x.createLinearGradient(0, H * 0.47, 0, H * 0.56);
+      hz.addColorStop(0, 'rgba(255,221,176,0)');
+      hz.addColorStop(0.45, 'rgba(255,214,168,0.30)');
+      hz.addColorStop(1, 'rgba(255,205,160,0)');
+      x.fillStyle = hz; x.fillRect(0, H * 0.47, W, H * 0.09);
+
       var t = new T3.CanvasTexture(c);
       t.mapping = T3.EquirectangularReflectionMapping; t.encoding = T3.sRGBEncoding;
       return t;
@@ -476,23 +539,51 @@ if (!window.THREE) {
       var rt = pm.fromEquirectangular(skyTex); scene.environment = rt.texture; pm.dispose();
     } catch (e) { scene.environment = skyTex; }
     var dome = new T3.Mesh(new T3.SphereGeometry(200, 40, 20),
-      new T3.MeshBasicMaterial({ map: skyTex, side: T3.BackSide, depthWrite: false }));
+      new T3.MeshBasicMaterial({ map: skyTex, side: T3.BackSide, depthWrite: false,
+                                 fog: false }));   /* fog must not eat the sky */
     scene.add(dome);
 
     var hemi = new T3.HemisphereLight(0x9fb9d6, 0x6d5f4b, 0.5); scene.add(hemi);
     var sun = new T3.DirectionalLight(0xffb877, 2.4);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    var _bigShadow = (window.innerWidth || 1280) >= 900 &&
+                     (renderer.capabilities.maxTextureSize || 2048) >= 4096;
+    sun.shadow.mapSize.set(_bigShadow ? 4096 : 2048, _bigShadow ? 4096 : 2048);
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 90;
-    sun.shadow.camera.left = -24; sun.shadow.camera.right = 24;
-    sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -14;
-    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.025; sun.shadow.radius = 5;
+    /* tighter frustum = more texels across the villa = crisp contact shadows */
+    sun.shadow.camera.left = -19; sun.shadow.camera.right = 19;
+    sun.shadow.camera.top = 16; sun.shadow.camera.bottom = -11;
+    sun.shadow.bias = -0.00022; sun.shadow.normalBias = 0.018; sun.shadow.radius = 2.4;
     scene.add(sun);
     var bounce = new T3.DirectionalLight(0x7f95b5, 0.28); bounce.position.set(12, 4, -10); scene.add(bounce);
+    /* The build finishes at dusk, so the villa lights up as it is handed over:
+       warm interior spill through the glazing plus a wash under the eaves.
+       No shadow casting on these - they are fill, and shadows would cost a map each. */
+    var warmA = new T3.PointLight(0xFFB877, 0, 20, 1.6); warmA.position.set(-3.0, 2.1, 0.3); scene.add(warmA);
+    var warmB = new T3.PointLight(0xFFC98F, 0, 17, 1.6); warmB.position.set(-1.6, 5.4, 0.0); scene.add(warmB);
 
     var MAXA = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
-    function tex(draw, rx, ry) {
-      var c = document.createElement('canvas'); c.width = c.height = 512; draw(c.getContext('2d'));
+    /* One full-resolution grit field, generated once and overlaid onto every
+       surface texture. Drawing each texture at 1024 and then laying real
+       per-pixel noise over it is what survives the camera coming close - a
+       512 map upscales into mush, and mush is what reads as "CG". */
+    var _grit = (function () {
+      var g = document.createElement('canvas'); g.width = g.height = 1024;
+      var gx = g.getContext('2d'), im = gx.createImageData(1024, 1024), d = im.data;
+      for (var p = 0; p < 1024 * 1024; p++) {
+        var v = 118 + (Math.random() * 2 - 1) * 46;
+        d[p * 4] = d[p * 4 + 1] = d[p * 4 + 2] = v; d[p * 4 + 3] = 255;
+      }
+      gx.putImageData(im, 0, 0); return g;
+    })();
+    function tex(draw, rx, ry, grit) {
+      var c = document.createElement('canvas'); c.width = c.height = 1024;
+      var x = c.getContext('2d');
+      x.save(); x.scale(2, 2); draw(x); x.restore();
+      x.globalCompositeOperation = 'overlay';
+      x.globalAlpha = grit === undefined ? 0.36 : grit;
+      x.drawImage(_grit, 0, 0);
+      x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
       var t = new T3.CanvasTexture(c); t.wrapS = t.wrapT = T3.RepeatWrapping;
       t.repeat.set(rx, ry); t.anisotropy = MAXA; return t;
     }
@@ -543,16 +634,126 @@ if (!window.THREE) {
     }, 3, 2);
     var texDirt = tex(function (x) {
       grain(x, 126, 26);
-      for (var i = 0; i < 500; i++) {
-        x.globalAlpha = 0.05 + Math.random() * 0.1; x.strokeStyle = '#000'; x.lineWidth = 1 + Math.random() * 3;
-        var y = Math.random() * 512; x.beginPath(); x.moveTo(0, y); x.lineTo(512, y + (Math.random() * 30 - 15)); x.stroke();
+      /* scattered clods and scrape marks at every angle - nothing that lines
+         up with the texture's own axes, so it cannot stripe when it tiles */
+      for (var i = 0; i < 260; i++) {
+        x.save();
+        x.translate(Math.random() * 512, Math.random() * 512);
+        x.rotate(Math.random() * 6.283);
+        x.globalAlpha = 0.05 + Math.random() * 0.11;
+        x.strokeStyle = Math.random() < 0.5 ? '#000' : '#fff';
+        x.lineWidth = 1 + Math.random() * 3;
+        var L = 18 + Math.random() * 90;
+        x.beginPath(); x.moveTo(-L / 2, 0);
+        x.quadraticCurveTo(0, (Math.random() * 10 - 5), L / 2, 0); x.stroke();
+        x.restore();
+      }
+      for (var j = 0; j < 420; j++) {
+        var g2 = 100 + Math.random() * 60;
+        x.globalAlpha = 0.10 + Math.random() * 0.22;
+        x.fillStyle = 'rgb(' + g2 + ',' + (g2 - 6) + ',' + (g2 - 14) + ')';
+        x.beginPath();
+        x.ellipse(Math.random() * 512, Math.random() * 512,
+                  1.5 + Math.random() * 5, 1.2 + Math.random() * 3.5,
+                  Math.random() * 3.14, 0, 7);
+        x.fill();
       }
       x.globalAlpha = 1;
-    }, 26, 26);
+    }, 11, 11);
     var texAsph = tex(function (x) { grain(x, 120, 16); }, 20, 20);
+    var texPaver = tex(function (x) {
+      grain(x, 170, 10);
+      x.strokeStyle = 'rgba(96,92,86,0.5)'; x.lineWidth = 3;
+      for (var r = 0; r < 8; r++) {
+        var y = r * 64; x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke();
+        var off = (r % 2) * 64;
+        for (var c = 0; c < 4; c++) {
+          var cx = off + c * 128;
+          x.beginPath(); x.moveTo(cx, y); x.lineTo(cx, y + 64); x.stroke();
+        }
+      }
+    }, 7, 7);
+
+    /* Real surfaces are never uniformly rough. A roughness map (green channel)
+       multiplies the base roughness, so weathering, trowel marks and polish
+       vary across every face. This is the single biggest break from CG-look. */
+    function roughTex(baseLo, baseHi, blotch, rx, ry) {
+      var c = document.createElement('canvas'); c.width = c.height = 1024;
+      var x = c.getContext('2d'); x.scale(2, 2);
+      x.fillStyle = 'rgb(' + baseHi + ',' + baseHi + ',' + baseHi + ')';
+      x.fillRect(0, 0, 512, 512);
+      for (var i = 0; i < blotch; i++) {
+        var r = 18 + Math.random() * 120, v = baseLo + Math.random() * (baseHi - baseLo);
+        var gx = Math.random() * 512, gy = Math.random() * 512;
+        var g = x.createRadialGradient(gx, gy, 0, gx, gy, r);
+        g.addColorStop(0, 'rgba(' + v + ',' + v + ',' + v + ',0.55)');
+        g.addColorStop(1, 'rgba(' + v + ',' + v + ',' + v + ',0)');
+        x.fillStyle = g; x.beginPath(); x.arc(gx, gy, r, 0, 7); x.fill();
+      }
+      var t = new T3.CanvasTexture(c); t.wrapS = t.wrapT = T3.RepeatWrapping;
+      t.repeat.set(rx, ry); t.anisotropy = MAXA; return t;
+    }
+    /* Albedo variation, deliberately centred near white (base 240) so it
+       multiplies the tuned base colours by ~0.96 rather than re-tinting them.
+       Flat colour over bump still reads as plastic; this breaks that up. */
+    function albedo(extra, rx, ry) {
+      return tex(function (x) {
+        grain(x, 240, 7);
+        if (extra) extra(x);
+      }, rx, ry, 0.22);
+    }
+    var albConc = albedo(function (x) {
+      for (var i = 0; i < 520; i++) {
+        var g = 214 + Math.random() * 34;
+        x.fillStyle = 'rgba(' + g + ',' + g + ',' + (g - 4) + ',' + (0.1 + Math.random() * 0.18) + ')';
+        x.beginPath(); x.arc(Math.random() * 512, Math.random() * 512, 1 + Math.random() * 2.6, 0, 7); x.fill();
+      }
+    }, 3, 3);
+    var albRend = albedo(function (x) {
+      x.globalAlpha = 0.05;
+      for (var i = 0; i < 46; i++) {
+        var y = Math.random() * 512; x.strokeStyle = '#b9b2a6'; x.lineWidth = 1.6;
+        x.beginPath(); x.moveTo(0, y);
+        x.bezierCurveTo(180, y + (Math.random() * 7 - 3.5), 340, y + (Math.random() * 7 - 3.5), 512, y);
+        x.stroke();
+      }
+      x.globalAlpha = 1;
+    }, 2, 2);
+    var albPaver = albedo(function (x) {
+      x.strokeStyle = 'rgba(176,170,160,0.55)'; x.lineWidth = 3;
+      for (var r = 0; r < 8; r++) {
+        var y = r * 64; x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke();
+        var off = (r % 2) * 64;
+        for (var cc = 0; cc < 4; cc++) {
+          var cx = off + cc * 128;
+          x.beginPath(); x.moveTo(cx, y); x.lineTo(cx, y + 64); x.stroke();
+        }
+      }
+    }, 7, 7);
+    var rghConc  = roughTex(150, 240, 90, 3, 3);
+    var rghRend  = roughTex(185, 245, 70, 2.4, 2.4);
+    var rghMetal = roughTex(90, 190, 80, 2, 2);
+
+    var texTimber = tex(function (x) {
+      x.fillStyle = '#4A3726'; x.fillRect(0, 0, 512, 512);
+      for (var b = 0; b < 16; b++) {
+        var bx = b * 32, v = 58 + Math.random() * 26;
+        x.fillStyle = 'rgb(' + Math.round(v * 1.30) + ',' + Math.round(v * 0.96) + ',' + Math.round(v * 0.66) + ')';
+        x.fillRect(bx + 2, 0, 27, 512);
+        x.globalAlpha = 0.16;
+        for (var gq = 0; gq < 14; gq++) {
+          x.strokeStyle = '#2A1D12'; x.lineWidth = 1 + Math.random();
+          var gy = Math.random() * 512;
+          x.beginPath(); x.moveTo(bx + 3, gy);
+          x.bezierCurveTo(bx + 12, gy + 24, bx + 18, gy - 18, bx + 28, gy + 8); x.stroke();
+        }
+        x.globalAlpha = 1;
+        x.fillStyle = 'rgba(20,13,8,0.55)'; x.fillRect(bx, 0, 2, 512);
+      }
+    }, 3, 2);
 
     function M(color, rough, metal, extra) {
-      var o = { color: new T3.Color(color), roughness: rough, metalness: metal || 0, envMapIntensity: 1.0 };
+      var o = { color: new T3.Color(color), roughness: rough, metalness: metal || 0, envMapIntensity: 0.45 };
       if (extra) for (var k in extra) o[k] = extra[k];
       return new T3.MeshStandardMaterial(o);
     }
@@ -563,7 +764,7 @@ if (!window.THREE) {
       render: M(0xEDE8DF, 0.88, 0, { bumpMap: texRender, bumpScale: 0.03 }),
       render2: M(0xE4DED4, 0.9, 0, { bumpMap: texRender, bumpScale: 0.03 }),
       stone: M(0x8E877B, 0.9, 0, { bumpMap: texConc, bumpScale: 0.09 }),
-      glass: M(0x0E1216, 0.045, 0.22, { envMapIntensity: 2.6 }),
+      glass: M(0x090C10, 0.028, 0.42, { envMapIntensity: 1.45 }),
       frame: M(0x22262A, 0.42, 0.5, { envMapIntensity: 1.2 }),
       alu: M(0x8E8B85, 0.35, 0.65, { envMapIntensity: 1.3 }),
       door: M(0x2A2622, 0.55, 0.15),
@@ -573,17 +774,79 @@ if (!window.THREE) {
       gravel: M(0xADA595, 0.98, 0, { bumpMap: texConc, bumpScale: 0.11 }),
       asphalt: M(0x3B3A38, 0.86, 0, { bumpMap: texAsph, bumpScale: 0.05 }),
       kerb: M(0xA9A49B, 0.9, 0, { bumpMap: texConc, bumpScale: 0.05 }),
+      lawn: M(0x4A5530, 0.99, 0, { envMapIntensity: 0.22 }),
+      paver: M(0xB4AFA6, 0.86, 0, { bumpMap: texPaver, bumpScale: 0.07 }),
+      timber: M(0xA9793F, 0.74, 0, { map: texTimber, bumpMap: texTimber, bumpScale: 0.09 }),
       wallLow: M(0xE6E1D7, 0.9, 0, { bumpMap: texRender, bumpScale: 0.03 }),
-      cypress: M(0x37452F, 1.0, 0),
-      foliage: M(0x4C5540, 1.0, 0),
+      cypress: M(0x2C3828, 0.96, 0, { envMapIntensity: 0.3 }),
+      foliage: M(0x3E4836, 0.96, 0, { envMapIntensity: 0.3 }),
       trunk: M(0x5B4E3C, 1.0, 0),
       yellow: M(0xB99323, 0.6, 0.28),
       steel: M(0x4A4844, 0.5, 0.6),
-      scaff: M(0x585652, 0.65, 0.4)
+      scaff: M(0x585652, 0.65, 0.4),
+      /* --- plant & machinery --- */
+      paint:   M(0xC19A24, 0.46, 0.22, { roughnessMap: rghMetal, envMapIntensity: 1.25 }),
+      paintDk: M(0x8E7319, 0.52, 0.22, { roughnessMap: rghMetal, envMapIntensity: 1.1 }),
+      track:   M(0x24262A, 0.92, 0.12, { roughnessMap: rghMetal, envMapIntensity: 0.6 }),
+      steelDk: M(0x35373B, 0.55, 0.72, { roughnessMap: rghMetal, envMapIntensity: 1.3 }),
+      chrome:  M(0xC8CBD0, 0.14, 0.95, { envMapIntensity: 1.9 }),
+      cabGlass: M(0x11161B, 0.07, 0.3, { envMapIntensity: 2.2 }),
+      /* the scoop is an open shell - both faces must be drawn or it
+         disappears as the bucket curls through the dig */
+      bucket: M(0x3A3C40, 0.58, 0.68, { roughnessMap: rghMetal, envMapIntensity: 1.3,
+                                        side: T3.DoubleSide })
     };
+    /* lux finishes: a clearcoat lacquer layer reads as real glass and real
+       machine paint under the low dusk sun. MeshPhysicalMaterial is core r128. */
+    function lux(mat, cc, ccr) {
+      try {
+        var o = { color: mat.color, roughness: mat.roughness, metalness: mat.metalness,
+                  envMapIntensity: mat.envMapIntensity, clearcoat: cc, clearcoatRoughness: ccr };
+        if (mat.roughnessMap) o.roughnessMap = mat.roughnessMap;
+        if (mat.bumpMap) { o.bumpMap = mat.bumpMap; o.bumpScale = mat.bumpScale; }
+        return new T3.MeshPhysicalMaterial(o);
+      } catch (e) { return mat; }
+    }
+    MAT.glass    = lux(MAT.glass, 1.0, 0.03);
+    MAT.glass.emissive = new T3.Color(0xFF9F4F);
+    MAT.glass.emissiveIntensity = 0;
+    MAT.gdoor = M(0x6A4A2A, 0.72, 0, { map: texTimber, bumpMap: texTimber, bumpScale: 0.08 });
+    MAT.cabGlass = lux(MAT.cabGlass, 1.0, 0.05);
+    MAT.paint    = lux(MAT.paint, 0.65, 0.22);
+    MAT.paintDk  = lux(MAT.paintDk, 0.6, 0.26);
+    MAT.alu      = lux(MAT.alu, 0.4, 0.18);
+
+    /* roughness variation across the architecture */
+    MAT.conc.map = albConc;   MAT.concDark.map = albConc;  MAT.stone.map = albConc;
+    MAT.gravel.map = albConc;  MAT.kerb.map = albConc;
+    MAT.render.map = albRend;  MAT.render2.map = albRend;  MAT.wallLow.map = albRend;
+    MAT.paver.map = albPaver;
+    /* mown stripes and clumping, so turf is not a flat green rectangle */
+    MAT.lawn.map = tex(function (x) {
+      grain(x, 214, 16);
+      for (var i = 0; i < 9; i++) {
+        x.globalAlpha = 0.10 + (i % 2) * 0.08;
+        x.fillStyle = (i % 2) ? '#d8e0c2' : '#aab58c';
+        x.fillRect(0, i * 57, 512, 57);
+      }
+      x.globalAlpha = 1;
+      for (var j = 0; j < 2600; j++) {
+        var g = 150 + Math.random() * 95;
+        x.globalAlpha = 0.16 + Math.random() * 0.3;
+        x.fillStyle = 'rgb(' + g + ',' + (g + 8) + ',' + (g - 26) + ')';
+        x.fillRect(Math.random() * 512, Math.random() * 512, 1.6, 2.6 + Math.random() * 3);
+      }
+      x.globalAlpha = 1;
+    }, 8, 8, 0.3);
+    MAT.lawn.bumpMap = MAT.lawn.map; MAT.lawn.bumpScale = 0.05;
+    MAT.conc.roughnessMap = rghConc;    MAT.concDark.roughnessMap = rghConc;
+    MAT.block.roughnessMap = rghConc;   MAT.stone.roughnessMap = rghConc;
+    MAT.render.roughnessMap = rghRend;  MAT.render2.roughnessMap = rghRend;
+    MAT.wallLow.roughnessMap = rghRend; MAT.kerb.roughnessMap = rghConc;
+    MAT.asphalt.roughnessMap = rghConc; MAT.gravel.roughnessMap = rghConc;
 
     /* ---------- scheduling ---------- */
-    var items = [], temps = [];
+    var items = [], temps = [], rigs = [], contacts = [];
     var _geo = {};
     function boxGeo(w, h, d) {
       var k = w.toFixed(3) + '|' + h.toFixed(3) + '|' + d.toFixed(3);
@@ -591,16 +854,15 @@ if (!window.THREE) {
       return _geo[k];
     }
     function push(mesh, h, t0, t1, mode) {
+      /* Fully-rendered reveal: geometry is always OPAQUE and always casts a
+         shadow. Nothing ghosts, nothing sorts wrong, nothing shows through.
+         Materials are shared (no per-mesh clone) so the GPU batches them. */
       if (mesh.isMesh) {
-        mesh.material = mesh.material.clone();
-        mesh.material.transparent = true; mesh.material.opacity = 0;
-        mesh.castShadow = false; mesh.receiveShadow = true;
+        mesh.castShadow = true; mesh.receiveShadow = true;
       } else {
         mesh.traverse(function (o) {
           if (!o.isMesh) return;
-          o.material = o.material.clone();
-          o.material.transparent = true; o.material.opacity = 0;
-          o.castShadow = false; o.receiveShadow = true;
+          o.castShadow = true; o.receiveShadow = true;
         });
       }
       mesh.visible = false;
@@ -623,12 +885,52 @@ if (!window.THREE) {
       return B(th, y1 - y0, z1 - z0, mat, x, (y0 + y1) / 2, (z0 + z1) / 2, t0, t1, mode);
     }
     function temp(obj, in0, in1, out0, out1) {
+      /* One shared clone per source material for the whole group: a detailed
+         machine is ~120 meshes, and cloning per mesh would compile ~120 shader
+         programs and stall the first frame it appears. */
+      var cache = [], clones = [];
       obj.traverse(function (o) {
-        if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0; o.castShadow = true; o.receiveShadow = true; }
+        if (!o.isMesh) return;
+        var k = cache.indexOf(o.material);
+        if (k < 0) {
+          k = cache.length; cache.push(o.material);
+          var c = o.material.clone(); c.transparent = true; c.opacity = 0; clones.push(c);
+        }
+        o.material = clones[k];
+        o.castShadow = true; o.receiveShadow = true;
       });
+      obj.userData_mats = clones;
       obj.visible = false;
       obj.userData = { in0: in0, in1: in1, out0: out0, out1: out1, ty: obj.position.y };
       scene.add(obj); temps.push(obj); return obj;
+    }
+
+    /* A radial falloff laid just above the ground under each mass. Sun shadows
+       only darken what the sun is blocked from; this is the ambient darkening
+       that sits in every contact and corner, and it is what stops a building
+       looking like it is hovering. */
+    var _aoTex = (function () {
+      var c = document.createElement('canvas'); c.width = c.height = 256;
+      var x = c.getContext('2d');
+      var g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+      g.addColorStop(0.00, 'rgba(26,22,18,0.60)');
+      g.addColorStop(0.42, 'rgba(26,22,18,0.34)');
+      g.addColorStop(0.72, 'rgba(26,22,18,0.11)');
+      g.addColorStop(1.00, 'rgba(26,22,18,0)');
+      x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+      var t = new T3.CanvasTexture(c); t.anisotropy = MAXA; return t;
+    })();
+    function contact(x0, x1, z0, z1, strength, t0, t1) {
+      var m = new T3.Mesh(new T3.PlaneGeometry(x1 - x0, z1 - z0),
+        new T3.MeshBasicMaterial({ map: _aoTex, transparent: true, opacity: strength,
+                                   depthWrite: false, polygonOffset: true,
+                                   polygonOffsetFactor: -2 }));
+      m.rotation.x = -Math.PI / 2;
+      m.position.set((x0 + x1) / 2, 0.015, (z0 + z1) / 2);
+      m.renderOrder = 2;
+      m.userData = { t0: t0, t1: t1, op: strength };
+      m.visible = false; scene.add(m); contacts.push(m);
+      return m;
     }
 
     /* ---------- permanent site ---------- */
@@ -651,12 +953,47 @@ if (!window.THREE) {
       w3.position.set(22, 0.8, -8); w3.castShadow = true; w3.receiveShadow = true; scene.add(w3);
     })();
 
+    /* Push every vertex out along its normal by a little smooth noise. One
+       cheap pass, and the shape stops being a CAD primitive. */
+    function roughen(geo, amp, freq) {
+      var pos = geo.attributes.position, n = geo.attributes.normal, v = new T3.Vector3();
+      for (var i = 0; i < pos.count; i++) {
+        var px = pos.getX(i), py = pos.getY(i), pz = pos.getZ(i);
+        var d = Math.sin(px * freq) * Math.cos(pz * freq * 1.31)
+              + 0.55 * Math.sin(py * freq * 1.9 + px * 0.7)
+              + 0.35 * Math.cos(pz * freq * 2.7 - py * 1.1);
+        v.set(n.getX(i), n.getY(i), n.getZ(i)).multiplyScalar(amp * d);
+        pos.setXYZ(i, px + v.x, py + v.y, pz + v.z);
+      }
+      pos.needsUpdate = true; geo.computeVertexNormals(); return geo;
+    }
+    /* each planting gets its own slightly shifted green, the way a real row
+       of trees never matches */
+    function leafMat(base, k) {
+      var m = base.clone();
+      m.color.offsetHSL((Math.random() - 0.5) * 0.045,
+                        (Math.random() - 0.5) * 0.10,
+                        (Math.random() - 0.5) * (k || 0.085));
+      return m;
+    }
     function cypress(x, z, s, mat) {
       var g = new T3.Group();
-      var c = new T3.Mesh(new T3.ConeGeometry(0.85 * s, 6.4 * s, 9), mat || MAT.cypress);
-      c.position.y = 3.2 * s; g.add(c);
-      var c2 = new T3.Mesh(new T3.ConeGeometry(0.55 * s, 2.2 * s, 8), mat || MAT.cypress);
-      c2.position.y = 5.6 * s; g.add(c2);
+      var mm = mat || leafMat(MAT.cypress);
+      var tiers = [[0.88, 3.4, 1.55, 14], [0.74, 2.9, 3.45, 13],
+                   [0.56, 2.3, 5.05, 12], [0.34, 1.6, 6.25, 10]];
+      for (var ti = 0; ti < tiers.length; ti++) {
+        var t = tiers[ti];
+        var gm = new T3.ConeGeometry(t[0] * s, t[1] * s, t[3]);
+        roughen(gm, 0.115 * s * (1 + ti * 0.22), 2.6 / Math.max(0.25, s));
+        var c = new T3.Mesh(gm, mm);
+        c.position.y = t[2] * s;
+        c.rotation.y = Math.random() * 6.283;
+        c.scale.set(1 + (Math.random() - 0.5) * 0.16, 1, 1 + (Math.random() - 0.5) * 0.16);
+        g.add(c);
+      }
+      var tr = new T3.Mesh(new T3.CylinderGeometry(0.07 * s, 0.11 * s, 1.5 * s, 6), MAT.trunk);
+      tr.position.y = 0.75 * s; g.add(tr);
+      g.rotation.y = Math.random() * 6.283;
       g.position.set(x, 0, z);
       g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       return g;
@@ -665,9 +1002,16 @@ if (!window.THREE) {
       var g = new T3.Group();
       var t = new T3.Mesh(new T3.CylinderGeometry(0.12 * s, 0.16 * s, 1.2 * s, 6), MAT.trunk);
       t.position.y = 0.6 * s; g.add(t);
-      [[0, 1.5, 0, 1.0], [-0.5, 1.25, 0.2, 0.66], [0.45, 1.35, -0.2, 0.7]].forEach(function (b) {
-        var m = new T3.Mesh(new T3.SphereGeometry(b[3] * s, 8, 6), MAT.foliage);
-        m.position.set(b[0] * s, b[1] * s, b[2] * s); g.add(m);
+      var fm = leafMat(MAT.foliage, 0.11);
+      [[0, 1.52, 0, 0.95], [-0.54, 1.26, 0.22, 0.62], [0.48, 1.36, -0.21, 0.66],
+       [0.12, 1.88, 0.3, 0.52], [-0.3, 1.74, -0.36, 0.46], [0.58, 1.68, 0.18, 0.4]]
+      .forEach(function (b) {
+        var gm = new T3.SphereGeometry(b[3] * s, 9, 7);
+        roughen(gm, 0.2 * b[3] * s, 3.1 / Math.max(0.25, s));
+        var m = new T3.Mesh(gm, fm);
+        m.position.set(b[0] * s, b[1] * s, b[2] * s);
+        m.rotation.set(Math.random() * 3, Math.random() * 6.283, Math.random() * 3);
+        g.add(m);
       });
       g.position.set(x, 0, z);
       g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -779,14 +1123,17 @@ if (!window.THREE) {
     panel('x', -7.2, -6.3, 2.2, L1 + 0.31, L2, 0.69);
     panel('x', 0.3, 1.2, 2.2, L1 + 0.31, L2, 0.695);
     panel('x', -6.3, 0.3, 2.2, 6.32, L2, 0.70);   /* header above the ribbon window */
+    /* east elevation of the upper storey - this face was missing entirely,
+       which is why the first floor read as an open frame you could see through */
+    panel('z', -4.7, 2.35, 1.05, L1 + 0.31, L2, 0.688);
     /* wing */
     panel('x', 1.2, 8.2, -3.05, 0.42, L1, 0.66);
     panel('z', -3.2, 1.7, 8.06, 0.42, L1, 0.67);
     panel('x', 1.2, 1.75, 1.56, 0.42, L1, 0.675);
     panel('x', 2.75, 4.5, 1.56, 0.42, L1, 0.68);
     panel('x', 7.3, 8.2, 1.56, 0.42, L1, 0.685);
-    panel('x', 4.5, 7.3, 2.62, L1 - 0.34, L1, 0.695);  /* garage header */
-    panel('x', 1.75, 2.75, 2.42, L1 - 0.34, L1, 0.70); /* entry header */
+    panel('x', 4.5, 7.3, 1.56, L1 - 0.34, L1, 0.695);  /* garage header, on the wall line */
+    panel('x', 1.75, 2.75, 1.56, L1 - 0.34, L1, 0.70); /* entry header, on the wall line */
     /* stone entry blade */
     wallZ(-0.6, 1.6, 1.3, 0.42, L1 + 0.9, 0.34, MAT.stone, 0.72, 0.79, 'rise');
 
@@ -821,9 +1168,59 @@ if (!window.THREE) {
     B(8.5, 0.06, 0.12, MAT.alu, -3.0, L2 + 0.3, 2.36, 0.86, 0.91, 'fade');
 
     /* 9 — landscaping / handover */
-    slab(1.4, 10.5, 1.9, 9.2, 0.0, 0.1, MAT.asphalt, 0.905, 0.965);      /* driveway */
-    slab(-7.6, 1.4, 1.9, 4.2, 0.0, 0.12, MAT.gravel, 0.915, 0.97);        /* front path */
-    slab(-8.2, -7.2, -4.7, 2.4, 0.0, 0.14, MAT.gravel, 0.92, 0.975);
+    /* The garage floor is RL 0.42. A flat driveway at RL 0.10 would leave a
+       320 mm drop at the door, so the drive ramps: 0.42 at the threshold down
+       to 0.12 at the street over 7.3 m (a 4.1% grade). */
+    /* ---- site works ------------------------------------------------------
+       Set out off the building, not off the lot. The garage opening is 2.7 m
+       at x 4.55-7.25, so the driveway is 3.2 m kerb-to-kerb on that centre
+       and only flares where it crosses the footpath, the way a crossover
+       actually does - it was previously 9.1 m wide, which is why it read as
+       an apron that had nothing to do with the house.
+
+       Levels run street-in: road 0.12, kerb top 0.26, verge 0.26, footpath
+       0.30, front garden 0.30, garage threshold 0.42. Everything in front of
+       the house now finishes flush with the paths instead of sitting at
+       subgrade.                                                            */
+    var DW0 = 4.30, DW1 = 7.50;      /* driveway edges, off the garage reveal */
+    var XO0 = 3.70, XO1 = 8.10;      /* crossover flare at the street         */
+    var FP0 = 7.50, FP1 = 8.70;      /* footpath                              */
+    var VG1 = 9.40;                  /* back of kerb                          */
+    var GDN = 2.05;                  /* garden runs right up under the eaves   */
+
+    (function driveway() {
+      slab(DW0, DW1, 1.15, 2.30, 0.32, 0.10, MAT.paver, 0.900, 0.952);   /* apron */
+      var d = slab(DW0, DW1, 2.30, FP0, 0.22, 0.10, MAT.paver, 0.905, 0.958);
+      d.rotation.x = 0.0392;                                              /* 4% ramp */
+      var x = slab(XO0, XO1, FP0, VG1, 0.17, 0.10, MAT.paver, 0.910, 0.962);
+      x.rotation.x = 0.0300;                                              /* crossover */
+    })();
+
+    /* footpath, split either side of the crossover so nothing overlaps */
+    slab(-22, XO0, FP0, FP1, 0.20, 0.10, MAT.conc, 0.912, 0.964);
+    slab(XO1,  22, FP0, FP1, 0.20, 0.10, MAT.conc, 0.912, 0.964);
+    /* verge between footpath and kerb */
+    slab(-22, XO0, FP1, VG1, 0.17, 0.09, MAT.lawn, 0.916, 0.968);
+    slab(XO1,  22, FP1, VG1, 0.17, 0.09, MAT.lawn, 0.916, 0.968);
+
+    /* entry path, set out on the front door at x 2.25 */
+    slab(1.68, 2.82, 1.60, FP0, 0.20, 0.10, MAT.conc, 0.915, 0.966);
+
+    /* front garden, lifted flush and edged on every side that meets paving */
+    [[-12.60, 1.68], [2.82, DW0], [DW1, 14.20]].forEach(function (e, i) {
+      slab(e[0], e[1], GDN, FP0, 0.19, 0.10, MAT.lawn, 0.918 + i * 0.002, 0.970);
+      slab(e[0], e[1], GDN - 0.10, GDN + 0.02, 0.19, 0.12, MAT.kerb, 0.920, 0.972);
+    });
+    /* side and rear yards: without these the lot stopped at the front garden
+       and everything past the garage stayed at subgrade, which read as a job
+       abandoned halfway */
+    slab(8.30, 14.20, -9.20, GDN, 0.19, 0.10, MAT.lawn, 0.922, 0.972);   /* east side */
+    slab(-12.60, -7.30, -9.20, GDN, 0.19, 0.10, MAT.lawn, 0.924, 0.974); /* west side */
+    slab(-7.30, 8.30, -9.20, -4.85, 0.19, 0.10, MAT.lawn, 0.926, 0.976); /* rear */
+    slab(-8.20, -7.20, -4.70, GDN, 0.20, 0.10, MAT.conc, 0.920, 0.975);   /* side path */
+    contact(-9.4, 3.4, -7.0, 4.0, 0.95, 0.10, 0.26);    /* main house footprint */
+    contact(-0.2, 10.4, -5.4, 3.9, 0.85, 0.13, 0.29);    /* right wing / garage */
+    contact(3.7, 8.1, 1.2, 9.4, 0.42, 0.90, 0.97);       /* driveway bedding */
     (function planting() {
       var spots = [[-8.6, 3.0, 0.62], [-9.6, 0.4, 0.7], [11.2, 3.4, 0.66], [2.0, 5.6, 0.5]];
       spots.forEach(function (p, k) {
@@ -836,24 +1233,264 @@ if (!window.THREE) {
     })();
 
     /* ---------- excavator (three timelapse positions) ---------- */
+    /* ---------- tracked excavator, built like the real machine ----------
+       A 4-sided CylinderGeometry is a TAPERED box, which is what gives the
+       boom and stick their real forged taper instead of a slab. Hydraulics are
+       a painted barrel with a chromed rod running inside it. */
+    function strut(mat, ax, ay, az, bx, by, bz, r, seg) {
+      var dx = bx - ax, dy = by - ay, dz = bz - az;
+      var len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
+      var m = new T3.Mesh(new T3.CylinderGeometry(r, r, len, seg || 10), mat);
+      m.quaternion.setFromUnitVectors(new T3.Vector3(0, 1, 0),
+        new T3.Vector3(dx, dy, dz).normalize());
+      m.position.set((ax + bx) / 2, (ay + by) / 2, (az + bz) / 2);
+      return m;
+    }
+    /* hydraulic ram: barrel from a->b, chrome rod continuing to the eye */
+    function ram(g, ax, ay, az, bx, by, bz, rad) {
+      var dx = bx - ax, dy = by - ay, dz = bz - az;
+      var L = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
+      var mx = ax + dx * 0.56, my = ay + dy * 0.56, mz = az + dz * 0.56;
+      g.add(strut(MAT.paintDk, ax, ay, az, mx, my, mz, rad, 12));
+      g.add(strut(MAT.chrome, mx, my, mz, bx, by, bz, rad * 0.56, 12));
+      var eye = new T3.Mesh(new T3.CylinderGeometry(rad * 0.85, rad * 0.85, rad * 1.5, 10), MAT.steelDk);
+      eye.rotation.x = Math.PI / 2; eye.position.set(bx, by, bz); g.add(eye);
+    }
+    /* tapered square prism: a 4-gon cylinder rotated onto its flats */
+    function taper(mat, r0, r1, len) {
+      var geo = new T3.CylinderGeometry(r0, r1, len, 4);
+      geo.rotateY(Math.PI / 4);
+      return new T3.Mesh(geo, mat);
+    }
+    /* ---------- articulated excavator ----------
+       Built as a real kinematic chain: undercarriage -> slewing house ->
+       boom -> stick -> bucket. Every hydraulic ram is solved each frame from
+       the world positions of its two anchors, so the rods physically extend
+       as the machine digs instead of floating alongside it. */
+    var _vA = new T3.Vector3(), _vB = new T3.Vector3(), _vD = new T3.Vector3();
+    var _UP = new T3.Vector3(0, 1, 0), _q = new T3.Quaternion();
+    function anchor(parent, x, y, z) {
+      var a = new T3.Group(); a.position.set(x, y, z); parent.add(a); return a;
+    }
+    function makeRam(host, A, B, rad, barrelFrac) {
+      var bl = Math.max(0.3, A.position.distanceTo(new T3.Vector3()) * 0 + 1);
+      var barrel = new T3.Mesh(new T3.CylinderGeometry(rad, rad, 1, 12), MAT.paintDk);
+      var rod = new T3.Mesh(new T3.CylinderGeometry(rad * 0.54, rad * 0.54, 1, 12), MAT.chrome);
+      barrel.castShadow = true; rod.castShadow = true;
+      host.add(barrel); host.add(rod);
+      return { barrel: barrel, rod: rod, A: A, B: B, bl: barrelFrac };
+    }
+    /* Teeth down, open face turned to the machine - the digging pose.
+       Both are achievable at once only because the section above is the
+       correct hand; while it was mirrored these two were 270 deg apart and
+       every rotation traded one off against the other. */
+    var BUCK_SET = Math.PI * (270 / 180);
     function excavator(rot) {
       var g = new T3.Group();
-      [-0.85, 0.85].forEach(function (dz) {
-        var tr = new T3.Mesh(boxGeo(3.5, 0.78, 0.72), MAT.steel);
-        tr.position.set(0, 0.39, dz); g.add(tr);
+      var LB = 2.95, LS = 2.45;   /* boom and stick lengths */
+
+      /* ---- undercarriage (does not slew) ---- */
+      [-0.92, 0.92].forEach(function (dz) {
+        var t = new T3.Group();
+        var belt = new T3.Mesh(boxGeo(3.05, 0.60, 0.58), MAT.track);
+        belt.position.set(0, 0.46, 0); t.add(belt);
+        [[-1.52, 0.46, 0.40], [1.52, 0.46, 0.36]].forEach(function (w) {
+          var c = new T3.Mesh(new T3.CylinderGeometry(w[2], w[2], 0.60, 14), MAT.track);
+          c.rotation.x = Math.PI / 2; c.position.set(w[0], w[1], 0); t.add(c);
+          var hub = new T3.Mesh(new T3.CylinderGeometry(w[2] * 0.5, w[2] * 0.5, 0.64, 10), MAT.steelDk);
+          hub.rotation.x = Math.PI / 2; hub.position.set(w[0], w[1], 0); hub.castShadow = false; t.add(hub);
+        });
+        for (var i = -1; i <= 1; i++) {
+          var r = new T3.Mesh(new T3.CylinderGeometry(0.15, 0.15, 0.50, 10), MAT.steelDk);
+          r.rotation.x = Math.PI / 2; r.position.set(i * 0.82, 0.19, 0); r.castShadow = false; t.add(r);
+        }
+        for (var k = 0; k < 9; k++) {
+          var gx = -1.42 + k * 0.355;
+          [0.08, 0.84].forEach(function (gy) {
+            var pl = new T3.Mesh(boxGeo(0.17, 0.055, 0.64), MAT.steelDk);
+            pl.position.set(gx, gy, 0); pl.castShadow = false; t.add(pl);
+          });
+        }
+        var frame = new T3.Mesh(boxGeo(2.5, 0.30, 0.30), MAT.paintDk);
+        frame.position.set(0, 0.60, 0); t.add(frame);
+        t.position.z = dz; g.add(t);
       });
-      var base = new T3.Mesh(boxGeo(2.5, 0.32, 1.9), MAT.steel); base.position.set(0, 0.9, 0); g.add(base);
-      var body = new T3.Mesh(boxGeo(2.6, 1.15, 1.8), MAT.yellow); body.position.set(-0.5, 1.62, 0); g.add(body);
-      var cab = new T3.Mesh(boxGeo(1.15, 1.35, 1.25), MAT.yellow); cab.position.set(0.75, 1.75, -0.2); g.add(cab);
-      var glass = new T3.Mesh(boxGeo(1.0, 0.95, 1.1), MAT.glass); glass.position.set(0.86, 1.9, -0.2); g.add(glass);
-      var boom = new T3.Mesh(boxGeo(3.9, 0.42, 0.44), MAT.yellow);
-      boom.position.set(2.1, 2.5, 0.55); boom.rotation.z = 0.62; g.add(boom);
-      var arm = new T3.Mesh(boxGeo(3.2, 0.34, 0.36), MAT.yellow);
-      arm.position.set(4.3, 1.9, 0.55); arm.rotation.z = -0.85; g.add(arm);
-      var buck = new T3.Mesh(boxGeo(0.95, 0.8, 1.0), MAT.steel);
-      buck.position.set(5.3, 0.5, 0.55); buck.rotation.z = 0.35; g.add(buck);
+      var cb = new T3.Mesh(boxGeo(1.5, 0.34, 1.9), MAT.steelDk); cb.position.set(0, 0.62, 0); g.add(cb);
+
+      /* ---- slewing house ---- */
+      var house = new T3.Group(); g.add(house);
+      var slew = new T3.Mesh(new T3.CylinderGeometry(0.88, 0.95, 0.26, 20), MAT.steelDk);
+      slew.position.set(0, 0.92, 0); house.add(slew);
+      var deck = new T3.Mesh(boxGeo(3.35, 0.20, 2.05), MAT.paintDk); deck.position.set(-0.45, 1.09, 0); house.add(deck);
+      var cw = taper(MAT.paint, 0.80, 0.98, 1.05);
+      cw.rotation.z = Math.PI / 2; cw.scale.set(1, 1.22, 1); cw.position.set(-1.92, 1.56, 0); house.add(cw);
+      var eng = new T3.Mesh(boxGeo(1.85, 0.92, 1.92), MAT.paint); eng.position.set(-0.85, 1.65, 0); house.add(eng);
+      for (var L = 0; L < 5; L++) {
+        var lv = new T3.Mesh(boxGeo(0.03, 0.10, 1.0), MAT.steelDk);
+        lv.position.set(-1.78, 1.40 + L * 0.17, 0.42); lv.castShadow = false; house.add(lv);
+      }
+      var hood = new T3.Mesh(boxGeo(1.6, 0.14, 1.8), MAT.paintDk); hood.position.set(-0.85, 2.16, 0); house.add(hood);
+      var exh = new T3.Mesh(new T3.CylinderGeometry(0.075, 0.09, 0.62, 10), MAT.steelDk);
+      exh.position.set(-1.45, 2.48, -0.55); house.add(exh);
+      var sh = new T3.Mesh(boxGeo(0.55, 0.95, 0.80), MAT.paintDk); sh.position.set(0.92, 1.62, 0.42); house.add(sh);
+
+      /* cab */
+      var cabG = new T3.Group();
+      var floor = new T3.Mesh(boxGeo(1.25, 0.10, 1.25), MAT.paintDk); floor.position.set(0, 0.05, 0); cabG.add(floor);
+      var roof = new T3.Mesh(boxGeo(1.30, 0.11, 1.30), MAT.paint); roof.position.set(0, 1.62, 0); cabG.add(roof);
+      [[-0.58, -0.58], [0.58, -0.58], [-0.58, 0.58], [0.58, 0.58]].forEach(function (c) {
+        var pil = new T3.Mesh(boxGeo(0.09, 1.60, 0.09), MAT.paintDk);
+        pil.position.set(c[0], 0.82, c[1]); pil.castShadow = false; cabG.add(pil);
+      });
+      var gl1 = new T3.Mesh(boxGeo(0.04, 1.42, 1.16), MAT.cabGlass); gl1.position.set(0.59, 0.84, 0); gl1.castShadow = false; cabG.add(gl1);
+      var gl2 = new T3.Mesh(boxGeo(1.16, 1.42, 0.04), MAT.cabGlass); gl2.position.set(0, 0.84, -0.59); gl2.castShadow = false; cabG.add(gl2);
+      var gl3 = new T3.Mesh(boxGeo(1.16, 1.42, 0.04), MAT.cabGlass); gl3.position.set(0, 0.84, 0.59); gl3.castShadow = false; cabG.add(gl3);
+      var seat = new T3.Mesh(boxGeo(0.42, 0.50, 0.46), MAT.steelDk); seat.position.set(-0.12, 0.42, 0); seat.castShadow = false; cabG.add(seat);
+      var beac = new T3.Mesh(new T3.CylinderGeometry(0.06, 0.07, 0.14, 8), M(0xD8A52A, 0.3, 0));
+      beac.position.set(-0.4, 1.74, 0.4); beac.castShadow = false; cabG.add(beac);
+      cabG.position.set(0.52, 1.19, -0.62); house.add(cabG);
+      [[0.15, 0.92], [-1.5, 0.92]].forEach(function (h) {
+        house.add(strut(MAT.steelDk, h[0], 2.22, h[1], h[0], 2.62, h[1], 0.035, 8));
+      });
+      house.add(strut(MAT.steelDk, 0.15, 2.60, 0.92, -1.5, 2.60, 0.92, 0.035, 8));
+
+      /* ---- boom -> stick -> bucket chain ---- */
+      var boomPiv = new T3.Group(); boomPiv.position.set(1.02, 1.62, 0.42); house.add(boomPiv);
+      var boom = taper(MAT.paint, 0.21, 0.30, LB);
+      boom.position.set(0, LB / 2, 0); boom.scale.z = 0.72; boomPiv.add(boom);
+
+      var stickPiv = new T3.Group(); stickPiv.position.set(0, LB, 0); boomPiv.add(stickPiv);
+      var stick = taper(MAT.paint, 0.145, 0.235, LS);
+      stick.position.set(0, LS / 2, 0); stick.scale.z = 0.66; stickPiv.add(stick);
+
+      var buckPiv = new T3.Group(); buckPiv.position.set(0, LS, 0); stickPiv.add(buckPiv);
+      var bk = new T3.Group();
+      /* ---- bucket -------------------------------------------------------
+         A real bucket is a fabricated scoop, not a rolled tube: a flat floor
+         running out to the cutting edge, a curved heel, a back wall, and two
+         flat side plates closing the ends. The half-drum this replaced could
+         never read right because its section was a constant radius.
+
+         So the section is drawn once as a polyline, offset outward by the
+         plate thickness to give the shell real metal, and extruded across the
+         width. The side plates are the same section filled in. Everything -
+         shell, sides, cutting edge, teeth - comes off that one profile, so
+         they stay in register whatever the pose.                          */
+      var BW2 = 0.92, PLT = 0.058;
+      var SEC = [[0.45, 0.58], [0.50, 0.26], [0.505, 0.02], [0.47, -0.16],
+                 [0.38, -0.29], [0.24, -0.365], [0.05, -0.40],
+                 [-0.18, -0.405], [-0.38, -0.385], [-0.58, -0.345]];
+      var PIN = [0.15, 0.52];           /* where the stick pins to the bucket */
+
+      /* offset the section outward to give the shell thickness */
+      function outward(pts, d) {
+        var o = [];
+        for (var i = 0; i < pts.length; i++) {
+          var a2 = pts[Math.max(0, i - 1)], b2 = pts[Math.min(pts.length - 1, i + 1)];
+          var tx = b2[0] - a2[0], ty = b2[1] - a2[1];
+          var L = Math.hypot(tx, ty) || 1; tx /= L; ty /= L;
+          o.push([pts[i][0] + ty * d, pts[i][1] - tx * d]);   /* normal = (ty,-tx) */
+        }
+        return o;
+      }
+      var OUT = outward(SEC, -PLT);
+
+      var body = new T3.Group();
+      body.position.set(-PIN[0], -PIN[1], 0); bk.add(body);
+
+      /* shell: the section band, extruded across the bucket */
+      var sh = new T3.Shape();
+      sh.moveTo(SEC[0][0], SEC[0][1]);
+      for (var si = 1; si < SEC.length; si++) sh.lineTo(SEC[si][0], SEC[si][1]);
+      for (var sj = OUT.length - 1; sj >= 0; sj--) sh.lineTo(OUT[sj][0], OUT[sj][1]);
+      sh.closePath();
+      var shellG = new T3.ExtrudeGeometry(sh, { depth: BW2, bevelEnabled: false });
+      shellG.translate(0, 0, -BW2 / 2);
+      var shell = new T3.Mesh(shellG, MAT.bucket); body.add(shell);
+
+      /* side plates: the same section, filled, closed across the mouth */
+      var sp = new T3.Shape();
+      sp.moveTo(OUT[0][0], OUT[0][1]);
+      for (var pi = 1; pi < OUT.length; pi++) sp.lineTo(OUT[pi][0], OUT[pi][1]);
+      sp.closePath();
+      var plateG = new T3.ExtrudeGeometry(sp, { depth: PLT * 0.85, bevelEnabled: false });
+      [BW2 / 2, -BW2 / 2 - PLT * 0.85].forEach(function (z) {
+        var m = new T3.Mesh(plateG, MAT.bucket); m.position.z = z; body.add(m);
+      });
+
+      /* cutting edge and teeth, taken from the last run of the section so
+         they always sit on the lip and point the way the floor runs */
+      var e0 = SEC[SEC.length - 2], e1 = SEC[SEC.length - 1];
+      var ex = e1[0] - e0[0], ey = e1[1] - e0[1];
+      var eL = Math.hypot(ex, ey) || 1; ex /= eL; ey /= eL;
+      var eAng = Math.atan2(ey, ex);
+
+      var lip = new T3.Mesh(boxGeo(0.17, 0.075, BW2 + PLT * 1.7), MAT.steelDk);
+      lip.position.set(e1[0] + ex * 0.03, e1[1] + ey * 0.03 - 0.012, 0);
+      lip.rotation.z = eAng; body.add(lip);
+
+      for (var tN = 0; tN < 5; tN++) {
+        var tooth = taper(MAT.chrome, 0.062, 0.016, 0.26);
+        tooth.rotation.z = eAng - Math.PI / 2;
+        tooth.position.set(e1[0] + ex * 0.20, e1[1] + ey * 0.20 - 0.012,
+                           -BW2 * 0.37 + tN * (BW2 * 0.74 / 4));
+        tooth.castShadow = false; body.add(tooth);
+      }
+      /* side cutters, slightly proud of the side plates */
+      [BW2 / 2 + PLT, -BW2 / 2 - PLT].forEach(function (z) {
+        var sc = new T3.Mesh(boxGeo(0.22, 0.05, 0.03), MAT.steelDk);
+        sc.position.set(e1[0] + ex * 0.08, e1[1] + ey * 0.08 - 0.012, z);
+        sc.rotation.z = eAng; sc.castShadow = false; body.add(sc);
+      });
+
+      /* wear strips down the floor */
+      for (var wN = 0; wN < 4; wN++) {
+        var wi = 4 + wN * 1.4, wa = Math.floor(wi), wf = wi - wa;
+        var pA = OUT[Math.min(OUT.length - 1, wa)], pB = OUT[Math.min(OUT.length - 1, wa + 1)];
+        var wx = pA[0] + (pB[0] - pA[0]) * wf, wy = pA[1] + (pB[1] - pA[1]) * wf;
+        var ws = new T3.Mesh(boxGeo(0.07, 0.028, BW2 * 0.17), MAT.steelDk);
+        ws.position.set(wx, wy - 0.014, -BW2 * 0.3 + wN * (BW2 * 0.6 / 3));
+        ws.rotation.z = Math.atan2(pB[1] - pA[1], pB[0] - pA[0]);
+        ws.castShadow = false; body.add(ws);
+      }
+
+      /* hitch ears on the back, bridging the shell up to the pin */
+      [-0.21, 0.21].forEach(function (dz) {
+        var ear = new T3.Mesh(boxGeo(0.40, 0.21, 0.085), MAT.bucket);
+        ear.position.set(0.16, 0.02, dz);
+        ear.rotation.z = 0.13; bk.add(ear);
+      });
+      var boss = new T3.Mesh(new T3.CylinderGeometry(0.085, 0.085, 0.58, 14), MAT.steelDk);
+      boss.rotation.x = Math.PI / 2; bk.add(boss);
+
+            bk.name = 'BUCKET';
+      bk.rotation.z = BUCK_SET;
+      buckPiv.add(bk);
+
+      /* pivot pins */
+      [[boomPiv, 0, 0], [stickPiv, 0, 0], [buckPiv, 0, 0]].forEach(function (pv) {
+        var pin = new T3.Mesh(new T3.CylinderGeometry(0.13, 0.13, 0.62, 12), MAT.steelDk);
+        pin.rotation.x = Math.PI / 2; pin.castShadow = false; pv[0].add(pin);
+      });
+
+      /* hydraulics, anchored across the joints they actually drive */
+      var rams = [];
+      [-0.30, 0.30].forEach(function (dz) {
+        rams.push(makeRam(g, anchor(house, 0.30, 1.30, 0.42 + dz),
+                             anchor(boomPiv, 0.16, 1.45, dz), 0.115, 1.25));
+      });
+      rams.push(makeRam(g, anchor(boomPiv, 0.22, 1.05, 0.42),
+                           anchor(stickPiv, 0.20, 0.72, 0), 0.105, 1.15));
+      rams.push(makeRam(g, anchor(stickPiv, 0.20, 1.55, 0),
+                           anchor(buckPiv, 0.26, 0.30, 0), 0.085, 0.95));
+
       g.rotation.y = rot;
-      g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      g.traverse(function (o) {
+        if (o.isMesh && o.castShadow !== false) { o.castShadow = true; }
+        if (o.isMesh) o.receiveShadow = true;
+      });
+      rigs.push({ root: g, house: house, boom: boomPiv, stick: stickPiv,
+                  buck: buckPiv, rams: rams, phase: Math.random() });
       return g;
     }
     (function () {
@@ -869,19 +1506,6 @@ if (!window.THREE) {
       heap(-11.5, -5.5, 2.1, 1.5, 0.4, 0.02, 0.07, 0.58, 0.66);
       heap(-8.8, -7.4, 1.5, 1.05, 1.2, 0.03, 0.09, 0.56, 0.64);
       heap(12.5, -3.0, 1.7, 1.2, 2.1, 0.16, 0.22, 0.60, 0.68);
-      /* material stacks + skip, on site through the middle of the build */
-      function stack(x, z, rot, in0, out1) {
-        var g = new T3.Group();
-        for (var k = 0; k < 3; k++) {
-          var m = new T3.Mesh(boxGeo(1.6, 0.22, 1.1), MAT.block);
-          m.position.set(0, 0.12 + k * 0.24, 0); g.add(m);
-        }
-        g.position.set(x, 0, z); g.rotation.y = rot;
-        temp(g, in0, in0 + 0.05, out1 - 0.06, out1);
-      }
-      stack(-9.5, 6.0, 0.5, 0.20, 0.90);
-      stack(10.5, 6.6, -0.3, 0.24, 0.88);
-      stack(-11.5, 2.2, 0.9, 0.42, 0.86);
     })();
 
     /* ---------- scaffold on the right return while it is rendered ---------- */
@@ -917,26 +1541,14 @@ if (!window.THREE) {
         var e = sm(Math.min(1, lp));
         var done = lp >= 1;
         if (u.mode === 'grow') {
-          var s = 0.001 + 0.999 * e;
-          m.scale.set(0.6 + 0.4 * e, s, 0.6 + 0.4 * e);
-          m.traverse(function (o) {
-            if (!o.isMesh) return;
-            o.material.opacity = Math.min(1, e * 2.2);
-            o.material.transparent = !done;
-            o.castShadow = e > 0.5;
-          });
+          var s = 0.0015 + 0.9985 * e;
+          m.scale.set(0.62 + 0.38 * e, s, 0.62 + 0.38 * e);
           continue;
         }
-        m.material.opacity = Math.min(1, e * 2.4);
-        m.material.transparent = !done;
-        m.castShadow = e > 0.5;
-        if (u.mode === 'rise') {
-          var sy = 0.02 + 0.98 * e;
-          m.scale.y = sy;
-          m.position.y = u.base + u.h * sy / 2;
-        } else {
-          m.position.y = u.ty + 0.14 * (1 - e);
-        }
+        /* every mode now extrudes from its own base: solid, shadowed, no pop */
+        var sy = 0.0015 + 0.9985 * e;
+        m.scale.y = sy;
+        m.position.y = u.base + u.h * sy / 2;
       }
     }
     function applyTemps(p) {
@@ -946,6 +1558,8 @@ if (!window.THREE) {
         g.visible = true;
         var e = p < u.in1 ? sm((p - u.in0) / (u.in1 - u.in0))
           : p > u.out0 ? 1 - sm((p - u.out0) / (u.out1 - u.out0)) : 1;
+        var mats = g.userData_mats;
+        if (mats) { for (var mi = 0; mi < mats.length; mi++) { mats[mi].opacity = Math.min(1, e * 1.9); mats[mi].transparent = e < 0.999; } }
         g.traverse(function (o) {
           if (!o.isMesh) return;
           o.material.opacity = Math.min(1, e * 1.9);
@@ -957,7 +1571,9 @@ if (!window.THREE) {
     /* light drifts through a long golden hour: the sun swings west and drops,
        cloud passes soften the key — the cue that reads as "time passing". */
     var cWarm = new T3.Color(0xff9a52), cGold = new T3.Color(0xffc98d), cHigh = new T3.Color(0xfff0d8);
-    var skyDay = new T3.Color(0xa8c2de), skyDusk = new T3.Color(0xd9a97e);
+    var skyDay = new T3.Color(0xa8c2de), skyDusk = new T3.Color(0x8296bc);
+    /* haze keeps a little of the sun's warmth; the fill light must not */
+    var fogDay = new T3.Color(0xbcc8d4), fogDusk = new T3.Color(0xc2ad96);
     function flicker(t) { return 0.5 * Math.sin(t * 6.1) + 0.3 * Math.sin(t * 14.7 + 1.1) + 0.2 * Math.sin(t * 31.3 + 0.5); }
     function applyLight(p, cycles) {
       var n = cycles || 3.0;
@@ -968,15 +1584,25 @@ if (!window.THREE) {
       var R = 30;
       sun.position.set(Math.cos(az) * R, R * Math.sin(elev) + 1.5, Math.sin(az) * R * 0.42 + 12.0);
       var cloud = cl(0.66 + 0.34 * flicker(p * 4.0));
-      sun.intensity = (1.85 + 1.30 * high) * (0.72 + 0.28 * cloud);
+      sun.intensity = (3.25 + 1.70 * high) * (0.80 + 0.20 * cloud);
       sun.color.copy(cWarm).lerp(cGold, high).lerp(cHigh, high * high * 0.7);
-      sun.shadow.radius = 3.5 + 7 * (1 - cloud) + 4 * (1 - high);
-      hemi.intensity = 0.26 + 0.24 * high + 0.12 * (1 - cloud);
+      /* keep the penumbra tight: soft enough for dusk, never mushy */
+      sun.shadow.radius = 1.8 + 2.0 * (1 - cloud) + 1.3 * (1 - high);
+      hemi.intensity = 0.10 + 0.13 * high + 0.05 * (1 - cloud);
       hemi.color.copy(skyDusk).lerp(skyDay, high);
-      bounce.intensity = 0.16 + 0.2 * (1 - high);
-      renderer.toneMappingExposure = 0.90 + 0.10 * (1 - high) - 0.06 * (1 - cloud);
-      scene.fog.color.copy(skyDusk).lerp(skyDay, high * 0.6);
+      bounce.intensity = 0.07 + 0.09 * (1 - high);
+      renderer.toneMappingExposure = 0.70 + 0.08 * (1 - high) - 0.04 * (1 - cloud);
+      scene.fog.color.copy(fogDusk).lerp(fogDay, high * 0.6);
       dome.material.color.setScalar(0.82 + 0.24 * high);
+      /* handover glow: only once the villa is enclosed, and only as light goes */
+      var night = 1 - high;
+      var done  = cl((p - 0.74) / 0.24);
+      var glow  = night * night * done;
+      MAT.glass.emissiveIntensity = 0.62 * glow;
+      MAT.glass.envMapIntensity = 1.45 - 0.45 * glow;
+      warmA.intensity = 3.4 * glow;
+      warmB.intensity = 2.6 * glow;
+      renderer.toneMappingExposure -= 0.10 * glow;
     }
 
     function resize(w, h) {
@@ -993,17 +1619,89 @@ if (!window.THREE) {
       camera.lookAt(LOOK);
       camera.updateProjectionMatrix();
     }
+    /* ---------- dig cycle ----------
+       [phase, boomAngle, stickWorldAngle, bucketWorldAngle, slew]
+       reach out -> break ground -> drag the bucket in -> lift clear ->
+       slew to the heap -> dump -> swing back. One pass is 9 s. */
+    var DIG = [
+      [0.00, -1.00, -2.25, -3.05, 0.00],
+      [0.15, -1.12, -2.45, -3.30, 0.00],
+      [0.36, -1.05, -2.95, -2.60, 0.00],
+      [0.50, -0.60, -2.60, -2.40, 0.00],
+      [0.68, -0.58, -2.60, -2.40, 1.30],
+      [0.82, -0.62, -2.70, -3.45, 1.30],
+      [0.94, -0.85, -2.40, -3.10, 0.40],
+      [1.00, -1.00, -2.25, -3.05, 0.00]
+    ];
+    function digPose(ph) {
+      var i = 0;
+      while (i < DIG.length - 2 && ph >= DIG[i + 1][0]) i++;
+      var a = DIG[i], b = DIG[i + 1];
+      var u = sm((ph - a[0]) / Math.max(1e-6, b[0] - a[0]));
+      return [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u,
+              a[3] + (b[3] - a[3]) * u, a[4] + (b[4] - a[4]) * u];
+    }
+    function updateRams(R) {
+      R.root.updateMatrixWorld(true);
+      for (var i = 0; i < R.rams.length; i++) {
+        var m = R.rams[i];
+        m.A.getWorldPosition(_vA); m.B.getWorldPosition(_vB);
+        R.root.worldToLocal(_vA); R.root.worldToLocal(_vB);
+        _vD.subVectors(_vB, _vA);
+        var len = _vD.length(); if (len < 1e-4) continue;
+        _vD.multiplyScalar(1 / len);
+        _q.setFromUnitVectors(_UP, _vD);
+        var bl = Math.min(m.bl, len - 0.06);
+        m.barrel.quaternion.copy(_q);
+        m.barrel.scale.y = bl;
+        m.barrel.position.set(_vA.x + _vD.x * bl * 0.5,
+                              _vA.y + _vD.y * bl * 0.5,
+                              _vA.z + _vD.z * bl * 0.5);
+        var rl = Math.max(0.05, len - bl);
+        m.rod.quaternion.copy(_q);
+        m.rod.scale.y = rl;
+        m.rod.position.set(_vA.x + _vD.x * (bl + rl * 0.5),
+                           _vA.y + _vD.y * (bl + rl * 0.5),
+                           _vA.z + _vD.z * (bl + rl * 0.5));
+      }
+    }
+    function animateRigs(now) {
+      var live = false;
+      for (var i = 0; i < rigs.length; i++) {
+        var R = rigs[i];
+        if (!R.root.visible) continue;
+        live = true;
+        var q = digPose((now / 9000 + R.phase) % 1);
+        R.boom.rotation.z = q[0];
+        R.stick.rotation.z = q[1] - q[0];
+        R.buck.rotation.z = q[2] - q[1];
+        R.house.rotation.y = q[3];
+        updateRams(R);
+      }
+      return live;
+    }
+    var _hook = null;
     function render(p, cycles) {
       var q = cl(p);
       applyItems(q); applyTemps(q); applyLight(q, cycles);
-      renderer.render(scene, camera);
+      for (var ci = 0; ci < contacts.length; ci++) {
+        var cm = contacts[ci], cu = cm.userData;
+        var ce = cl((q - cu.t0) / Math.max(1e-6, cu.t1 - cu.t0));
+        cm.visible = ce > 0.001;
+        if (cm.visible) cm.material.opacity = cu.op * sm(ce);
+      }
+      var now = (typeof performance !== 'undefined' && performance.now)
+        ? performance.now() : Date.now();
+      var live = animateRigs(now);
+      if (_hook) _hook(scene, camera); else renderer.render(scene, camera);
+      return live;   /* true while a machine is on site and moving */
     }
     resize(1920, 1080);
-    return { render: render, resize: resize, renderer: renderer, scene: scene, camera: camera };
+    return { render: render, resize: resize, renderer: renderer, scene: scene, camera: camera,
+             setRenderHook: function (fn) { _hook = fn || null; } };
   }
   window.VillaScene = { create: create };
 })();
-
 </script>
 <script>
 /* hero-controller.js — scroll-driven cinematic hero.
@@ -1102,6 +1800,92 @@ if (!window.THREE) {
     var DAY_CYCLES = 0.16;   // keeps the sun low + warm (golden hour), never midday
 
     var REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ---- Ambient occlusion + bloom, as a progressive enhancement -----------
+       Sun shadows cannot darken a corner the sun never reached, so without
+       occlusion every junction stays evenly lit and the whole model reads as
+       CG. SAO supplies that contact shading; a tight bloom gives the dusk
+       glazing a real lens response.
+
+       This is loaded AFTER the hero is already drawing, and only installs
+       itself if every script arrived and a trial frame renders without
+       throwing. If anything at all fails, the hook is never set and the scene
+       keeps rendering exactly as it does now. It is also skipped on phones and
+       small screens, where the extra depth+normal passes would cost frames.  */
+    var FX = { on: false, composer: null, sao: null };
+    (function initFX() {
+      if (REDUCE) return;
+      if (!window.matchMedia('(min-width: 1100px)').matches) return;
+      if (navigator.maxTouchPoints > 1 && !window.matchMedia('(pointer: fine)').matches) return;
+      if ((navigator.hardwareConcurrency || 4) < 4) return;
+
+      var BASE = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+      var LIST = [
+        'shaders/CopyShader.js', 'postprocessing/EffectComposer.js',
+        'postprocessing/ShaderPass.js', 'postprocessing/RenderPass.js',
+        'shaders/SAOShader.js', 'shaders/DepthLimitedBlurShader.js',
+        'shaders/UnpackDepthRGBAShader.js', 'postprocessing/SAOPass.js',
+        'shaders/LuminosityHighPassShader.js', 'postprocessing/UnrealBloomPass.js'
+      ];
+      var i = 0;
+      function next() {
+        if (i >= LIST.length) { build(); return; }
+        var el = document.createElement('script');
+        el.src = BASE + LIST[i++];
+        el.async = false;
+        el.onload = next;
+        el.onerror = function () { /* silent: the hero is already fine without it */ };
+        document.head.appendChild(el);
+      }
+      function build() {
+        try {
+          var T3 = window.THREE;
+          if (!T3.EffectComposer || !T3.SAOPass || !T3.UnrealBloomPass) return;
+          var r = scene.renderer, sz = r.getSize(new T3.Vector2());
+
+          /* A composer renders into an offscreen target, which silently throws
+             away the canvas's own antialiasing - edges would come back worse
+             than they are now. A multisampled target restores it, and that is
+             WebGL2-only, so on WebGL1 we decline the whole thing rather than
+             trade crisp edges for occlusion. Half-float also keeps the sky
+             gradient from banding in 8-bit intermediates. */
+          if (!r.capabilities.isWebGL2 || !T3.WebGLMultisampleRenderTarget) return;
+          var rt = new T3.WebGLMultisampleRenderTarget(sz.x || 2, sz.y || 2, {
+            minFilter: T3.LinearFilter, magFilter: T3.LinearFilter,
+            format: T3.RGBAFormat, type: T3.HalfFloatType
+          });
+          rt.samples = 4;
+          var comp = new T3.EffectComposer(r, rt);
+          comp.addPass(new T3.RenderPass(scene.scene, scene.camera));
+
+          var sao = new T3.SAOPass(scene.scene, scene.camera, false, true);
+          sao.params.output = T3.SAOPass.OUTPUT.Default;
+          sao.params.saoBias = 0.42;
+          sao.params.saoIntensity = 0.021;
+          sao.params.saoScale = 7.5;
+          sao.params.saoKernelRadius = 36;
+          sao.params.saoMinResolution = 0;
+          sao.params.saoBlur = true;
+          sao.params.saoBlurRadius = 7;
+          sao.params.saoBlurStdDev = 5;
+          sao.params.saoBlurDepthCutoff = 0.013;
+          comp.addPass(sao);
+
+          /* threshold high enough that only the lit glazing blooms - the sky
+             and the render walls must stay crisp, not hazy */
+          var bloom = new T3.UnrealBloomPass(new T3.Vector2(sz.x, sz.y), 0.26, 0.62, 0.86);
+          comp.addPass(bloom);
+
+          comp.setSize(sz.x, sz.y);
+          comp.render();                         /* trial frame: throws here if unsupported */
+
+          FX.composer = comp; FX.sao = sao; FX.bloom = bloom; FX.on = true;
+          scene.setRenderHook(function () { comp.render(); });
+          dirty = true;                          /* redraw once through the new path */
+        } catch (e) { FX.on = false; }           /* keep the plain renderer */
+      }
+      next();
+    })();
     function cl(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
     function smooth(x) { return x <= 0 ? 0 : x >= 1 ? 1 : x * x * x * (x * (x * 6 - 15) + 10); }
 
@@ -1154,6 +1938,9 @@ if (!window.THREE) {
       forceFullBleed();
       forceCanvasBox();
       scene.resize(w, h);
+      if (FX.on && FX.composer) {
+        try { FX.composer.setSize(w, h); } catch (e) {}
+      }
       return true;
     }
     // self-heal: if anything ever knocks the canvas out of alignment, fix it
@@ -1208,6 +1995,42 @@ if (!window.THREE) {
       } catch (e) {}
     }
 
+    /* the scene returns true while plant is on site and moving: keep feeding
+       it frames then, otherwise idle on the dirty flag so nothing burns. */
+    var liveAnim = false;
+    /* chapter captions, swapped as the build moves through its stages */
+    /* These marks are read against the RAW scroll fraction, but the scene is
+       driven by that fraction raised to ACCEL. A caption at 0.64 was landing
+       on build progress 0.57 - calling the envelope while the frame was still
+       open. Each mark below is the scroll position that actually corresponds
+       to its stage: b = p^(1/ACCEL). */
+    var CHAPTERS = [
+      [0.00, 'Site works',  'Set out and cut to level.'],
+      [0.17, 'Footings',    'Poured, levelled, cured.'],
+      [0.35, 'Structure',   'Framed, plumbed and squared.'],
+      [0.50, 'Upper floor', 'Second level set.'],
+      [0.70, 'Envelope',    'Sealed against the weather.'],
+      [0.86, 'Glazing',     'Light brought in.'],
+      [0.93, 'Handover',    'Signed off, keys across.']
+    ];
+    var chapEl = document.querySelector('.hero-chapter');
+    var chapK  = document.querySelector('.hero-chapter__k');
+    var chapT  = document.querySelector('.hero-chapter__t');
+    var lastChap = 0, chapTimer = 0;
+    function setChapter(b) {
+      if (!chapEl || !chapK || !chapT) return;
+      var ci = 0;
+      for (var i = 0; i < CHAPTERS.length; i++) if (b >= CHAPTERS[i][0]) ci = i;
+      if (ci === lastChap) return;
+      lastChap = ci;
+      var c = CHAPTERS[ci];
+      chapEl.classList.add('is-swap');
+      clearTimeout(chapTimer);
+      chapTimer = setTimeout(function () {
+        chapK.textContent = c[1]; chapT.textContent = c[2];
+        chapEl.classList.remove('is-swap');
+      }, 170);
+    }
     var lastPct = -1, vTick = 0;
     function loop() {
       requestAnimationFrame(loop);
@@ -1223,7 +2046,7 @@ if (!window.THREE) {
       if (Math.abs(d) > 0.00015) { shown += d * EASE; dirty = true; }
       else if (shown !== target) { shown = target; dirty = true; }
 
-      if (!dirty) return;      // nothing changed -> no work, no jank
+      if (!dirty && !liveAnim) return;   // idle and nothing animating -> no work
       dirty = false;
 
       var f = shown;
@@ -1231,7 +2054,8 @@ if (!window.THREE) {
       // 2nd arg = day/night cycles. The scene defaults to 3 full cycles, which
       // swings through midday and washes the render out to milky grey. A small
       // value keeps the sun low and warm: one continuous golden-hour dusk.
-      scene.render(Math.pow(b, ACCEL), DAY_CYCLES);
+      liveAnim = (scene.render(Math.pow(b, ACCEL), DAY_CYCLES) === true);
+      setChapter(b);
 
       // wording holds its opacity throughout; only a whisper of settle
       if (copy) {
