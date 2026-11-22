@@ -110,8 +110,11 @@ html,body{overflow-x:clip}
   .est-left{padding:clamp(8.5rem,10rem + 6vh,12rem) clamp(1.5rem,3vw,3rem) 6rem var(--estg);position:relative;z-index:2}
   .est-viewer{position:sticky;top:0;height:100vh;height:100svh}
   /* soft edges so the render melts into the page: fades into the options on the left, and top and bottom */
-  .est-viewer canvas{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18%),linear-gradient(180deg,transparent 0,#000 14%,#000 84%,transparent 100%);-webkit-mask-composite:source-in;
-    mask-image:linear-gradient(90deg,transparent 0,#000 18%),linear-gradient(180deg,transparent 0,#000 14%,#000 84%,transparent 100%);mask-composite:intersect}
+  /* the render is wider than its column: it runs back under the options and off the right edge, fading out as it goes */
+  .est-viewer{overflow:visible}
+  .est-viewer canvas{left:-18vw;width:calc(100% + 18vw);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.2) 16%,#000 34%),linear-gradient(180deg,transparent 0,#000 9%,#000 90%,transparent 100%);-webkit-mask-composite:source-in;
+    mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.2) 16%,#000 34%),linear-gradient(180deg,transparent 0,#000 9%,#000 90%,transparent 100%);mask-composite:intersect}
   .est-viewer__top{left:clamp(1.5rem,5vw,4rem);right:var(--estg);top:clamp(6.5rem,12vh,8rem)}
   .est-viewer__bot{left:clamp(1.5rem,5vw,4rem);right:var(--estg);bottom:clamp(1.8rem,5vh,3.2rem)}
   .est-viewer__name{font-size:clamp(2.6rem,1rem + 3.2vw,4.8rem)}
@@ -177,7 +180,7 @@ html,body{overflow-x:clip}
         <div>
           <div class="est-k">Call for your price</div>
           <a class="est-phone" href="tel:0424541879">0424 541 879</a>
-          <p class="est-quote">Quote <span class="est-code" id="oCode">BTH-M-M</span></p>
+          <p class="est-quote">Quote <span class="est-code" id="oCode">BTH-6-M</span></p>
         </div>
         <div class="est-actions">
           <a class="btn btn--solid" href="tel:0424541879"><span class="dot"></span>Call now</a>
@@ -207,7 +210,7 @@ html,body{overflow-x:clip}
       <canvas id="render" tabindex="-1" aria-label="Live 3D render of your project. Use the left and right arrow keys to rotate."></canvas>
       <div class="est-viewer__top"><p class="label" id="stageLabel">Drafting</p><div class="est-tags" id="oTags"></div></div>
       <div class="est-viewer__bot">
-        <div><div class="est-viewer__name" id="oName">Bathroom</div><div class="est-viewer__meta" id="oMeta">Main · Elevated</div></div>
+        <div><div class="est-viewer__name" id="oName">Bathroom</div><div class="est-viewer__meta" id="oMeta">6 m² · Elevated</div></div>
         <div class="est-viewer__hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6"/><path d="M18 3v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6"/><path d="M6 21v-4h4"/></svg>Drag to rotate</div>
       </div>
     </div>
@@ -235,6 +238,7 @@ html,body{overflow-x:clip}
       <div class="foot__reg">
         <div><span class="k">ACN</span><span class="v">699 035 053</span></div>
         <div><span class="k">ABN</span><span class="v">89 699 035 053</span></div>
+        <div><span class="k">NSW Licence</span><span class="v">500653C</span></div>
         <div><span class="k">Email</span><a class="v" href="mailto:info@smithandturnerconstruction.com.au">info@smithandturnerconstruction.com.au</a></div>
         <div><span class="k">Phone</span><a class="v" href="tel:0424541879">0424 541 879</a></div>
         <div><span class="k">Web</span><a class="v" href="https://www.smithandturnerconstruction.com.au">smithandturnerconstruction.com.au</a></div>
@@ -296,6 +300,7 @@ var Draft = (function () {
   Draft.prototype.resize = function () {
     var r = this.cv.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
     this.W = Math.max(1, r.width); this.H = Math.max(1, r.height); this.dpr = d;
+    var pr = this.cv.parentNode.getBoundingClientRect(); this.dx = (pr.left + pr.width / 2) - (r.left + r.width / 2);
     this.cv.width = Math.round(this.W * d); this.cv.height = Math.round(this.H * d);
   };
 
@@ -362,7 +367,7 @@ var Draft = (function () {
     c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, W, H);
     if (!g) return;
     var dist = this.cur.dist, ty = this.cur.ty, ca = Math.cos(this.ang), sa = Math.sin(this.ang),
-        ce = Math.cos(ELEV), se = Math.sin(ELEV), F = (H / 2) / Math.tan(FOV / 2), cx = W / 2, cy = H * 0.44;
+        ce = Math.cos(ELEV), se = Math.sin(ELEV), F = (H / 2) / Math.tan(FOV / 2), cx = W / 2 + (this.dx || 0), cy = H * 0.44;
     var near = dist - g.r, span = 2.2 * g.r;
     function P(x, y, z, out) {
       var x1 = x * ca - z * sa, z1 = x * sa + z * ca, y1 = y - ty;
@@ -460,33 +465,33 @@ var Sketch = (function () {
     for (var i = 0; i < n; i++) rz(a, x0 + i * gap + (gap - ww) / 2, y, z, ww, h); }
 
   var B = {
-    bathroom: function (g, s, f) {
-      var dm = { S: [2.0, 1.7], M: [2.8, 2.2], L: [3.6, 2.8] }[s.size], w = dm[0], d = dm[1], h = 2.4;
+    bathroom: function (g, s, f, A) {
+      A = A || 6; var w = Math.sqrt(A * 1.3), d = A / w, h = 2.4;
       ry(g.main, 0, 0, 0, w, d); rz(g.main, 0, 0, 0, w, h); rx(g.main, 0, 0, 0, d, h); rx(g.main, w, 0, 0, d, h);
       var top = f === 0 ? 1.2 : h, t = f === 2 ? 0.3 : 0.6;
       hz(g.detail, 0, 0, w, 0, top, t); vz(g.detail, 0, w, 0, 0, top, t); hx(g.detail, 0, 0, d, 0, top, t); vx(g.detail, 0, 0, d, 0, top, t);
       box(g.main, w - 1.0, 0, 0, 0.85, 0.85, 0.5); ry(g.detail, w - 0.85, 0.85, 0.08, 0.55, 0.34); rz(g.detail, w - 0.95, 1.15, 0.01, 0.75, 0.8);
       rx(g.main, 0.95, 0, 0, 0.95, 2.0); S(g.main, 0.45, 2.15, 0.02, 0.45, 1.95, 0.3); ry(g.detail, 0.4, 0.002, 0.4, 0.15, 0.15);
-      var bath = s.size === "L" || (s.size === "M" && f === 2);
+      var bath = A >= 8 || (A >= 6 && f === 2);
       var tz = 0.85;
       box(g.main, w - 0.65, 0, tz, 0.45, 0.42, 0.38); box(g.main, w - 0.2, 0.38, tz - 0.02, 0.18, 0.42, 0.42);
       if (bath) { var bw = Math.min(1.7, w - 1.2); box(g.main, 1.05, 0, d - 0.8, bw, 0.55, 0.75); ry(g.detail, 1.15, 0.55, d - 0.7, bw - 0.2, 0.55); }
       if (s.layout) { var oz = bath ? 0.02 : d - 0.45, ox = bath ? 1.15 : w - 0.65;
         box(g.ghost, ox, 0, oz, 0.45, 0.42, 0.38); dash(g.ghost, ox + 0.22, 0.01, oz + 0.19, w - 0.42, 0.01, tz + 0.19, 10); }
     },
-    kitchen: function (g, s, f) {
-      var dm = { S: [3.0, 2.6], M: [4.0, 3.2], L: [5.0, 4.0] }[s.size], w = dm[0], d = dm[1], h = 2.6, ds = [0.9, 0.6, 0.45][f];
+    kitchen: function (g, s, f, A) {
+      A = A || 12; var w = Math.sqrt(A * 1.22), d = A / w, h = 2.6, ds = [0.9, 0.6, 0.45][f];
       ry(g.main, 0, 0, 0, w, d); rz(g.main, 0, 0, 0, w, h); rx(g.main, 0, 0, 0, d, h);
       box(g.main, 0, 0, 0, w, 0.9, 0.6); box(g.main, 0, 1.45, 0, w, 0.75, 0.35);
       vz(g.detail, 0, w, 0.6, 0.1, 0.85, ds); vz(g.detail, 0, w, 0.35, 1.5, 2.15, ds);
       ry(g.detail, w * 0.25, 0.9, 0.1, 0.8, 0.42); ry(g.detail, w * 0.62, 0.9, 0.08, 0.6, 0.46);
-      if (s.size === "S") { box(g.main, 0, 0, d - 0.6, w, 0.9, 0.6); vz(g.detail, 0, w, d - 0.6, 0.1, 0.85, ds); }
+      if (A < 9) { box(g.main, 0, 0, d - 0.6, w, 0.9, 0.6); vz(g.detail, 0, w, d - 0.6, 0.1, 0.85, ds); }
       else { var run = Math.min(d - 1.4, 2.2); box(g.main, 0, 0, 0.6, 0.6, 0.9, run); vx(g.detail, 0.6, 0.6, 0.6 + run, 0.1, 0.85, ds); }
-      if (s.size === "L") {
+      if (A >= 18 || (A >= 14 && f >= 1)) {
         var ix = w / 2 - 1.2, iz = d - 1.6; box(g.main, ix, 0, iz, 2.4, 0.9, 1.0); vz(g.detail, ix, ix + 2.4, iz + 1.0, 0.1, 0.85, ds);
         if (f >= 1) for (var i = 0; i < 3; i++) { var px = w / 2 - 0.8 + i * 0.8; S(g.detail, px, h, iz + 0.5, px, 1.95, iz + 0.5); ry(g.detail, px - 0.12, 1.95, iz + 0.38, 0.24, 0.24); }
       }
-      if (s.layout && s.size !== "S") { box(g.ghost, w - 1.8, 0, d - 0.6, 1.8, 0.9, 0.6); dash(g.ghost, w - 0.9, 0.01, d - 0.3, w * 0.4, 0.01, 0.75, 12); }
+      if (s.layout && A >= 9) { box(g.ghost, w - 1.8, 0, d - 0.6, 1.8, 0.9, 0.6); dash(g.ghost, w - 0.9, 0.01, d - 0.3, w * 0.4, 0.01, 0.75, 12); }
     },
     extension: function (g, s, f, A) {
       house(g.ghost, 0, 0, 10, 8, 2.7, 1.8);
@@ -553,24 +558,29 @@ var Sketch = (function () {
 })();
 
 /* ---------------- Rendered 3D model (loaded after Three.js) ---------------- */
-/* =====================================================================
-   SMITH & TURNER — estimate/studio.js
-   Rendered 3D project model for the estimator, in the same render style
-   as the homepage hero: Three.js r128, ACES filmic tone mapping, soft
-   shadows, hemisphere + sun lighting, procedural bump-mapped materials.
-   Exposes window.Studio(canvas) -> { set(state, finishIndex, animate), stop() }
-   ===================================================================== */
 window.__loadStudio = function () {
+  /* =====================================================================
+     SMITH & TURNER — estimate/studio.js  (v2: detailed finishes)
+     Rendered 3D project model for the estimator, in the homepage's render
+     style (Three.js r128, ACES filmic, soft shadows, studio reflections),
+     with architectural detailing and a palette per finish level:
+       Essential  coastal white · Surfmist roof · silver frames
+       Elevated   warm white · oak and sage · Basalt roof · bronze frames
+       Luxe       charcoal and Monument · blackbutt · marble · brass
+     Exposes window.Studio(canvas) -> { set(state, finishIndex, animate), stop() }
+     ===================================================================== */
   "use strict";
   var T = window.THREE;
   if (!T || window.Studio) return;
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var small = Math.min(screen.width, screen.height) < 700;
 
-  /* ---------------- Materials (homepage palette + interiors) ---------------- */
+  function rng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  /* ---------------- Textures and materials ---------------- */
   function makeMaterials(renderer) {
     var MAXA = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
-    var SZ = small ? 256 : 512, K = SZ / 512;
+    var SZ = small ? 256 : 512, K = SZ / 512, R = rng(7);
     function tex(draw, rx, ry, color) {
       var c = document.createElement("canvas"); c.width = c.height = SZ;
       var x = c.getContext("2d"); x.scale(K, K); draw(x);
@@ -583,125 +593,145 @@ window.__loadStudio = function () {
       [4, 8, 16, 32, 64, 128].forEach(function (cells, i) {
         var tm = document.createElement("canvas"); tm.width = tm.height = cells; var tx = tm.getContext("2d");
         var im = tx.createImageData(cells, cells), amp = contrast / (i * 0.85 + 1);
-        for (var p = 0; p < cells * cells; p++) { var v = base + (Math.random() * 2 - 1) * amp; im.data[p * 4] = im.data[p * 4 + 1] = im.data[p * 4 + 2] = v; im.data[p * 4 + 3] = 255; }
+        for (var p = 0; p < cells * cells; p++) { var v = base + (R() * 2 - 1) * amp; im.data[p * 4] = im.data[p * 4 + 1] = im.data[p * 4 + 2] = v; im.data[p * 4 + 3] = 255; }
         tx.putImageData(im, 0, 0); ctx.globalAlpha = 0.5; ctx.imageSmoothingEnabled = true; ctx.drawImage(tm, 0, 0, 512, 512);
       }); ctx.globalAlpha = 1;
     }
+    function grey(v, a) { return "rgba(" + v + "," + v + "," + v + "," + (a == null ? 1 : a) + ")"; }
     var texRender = tex(function (x) { fractal(x, 134, 20); }, 3, 2);
-    var texConc = tex(function (x) { fractal(x, 128, 24);
-      for (var i = 0; i < 1200; i++) { var g = 90 + Math.random() * 95; x.fillStyle = "rgba(" + g + "," + g + "," + g + "," + (0.14 + Math.random() * 0.24) + ")"; x.beginPath(); x.arc(Math.random() * 512, Math.random() * 512, 1 + Math.random() * 2.4, 0, 7); x.fill(); }
-    }, 4, 3);
-    var texGround = tex(function (x) { fractal(x, 128, 24); }, 88, 88);
+    var texConc = tex(function (x) { fractal(x, 128, 22);
+      for (var i = 0; i < 1100; i++) { x.fillStyle = grey(90 + R() * 95 | 0, 0.12 + R() * 0.2); x.beginPath(); x.arc(R() * 512, R() * 512, 1 + R() * 2.2, 0, 7); x.fill(); } }, 1 / 3, 1 / 3);
+    var texConcMap = tex(function (x) { fractal(x, 236, 10); }, 1 / 3, 1 / 3, true);
     var texLawn = tex(function (x) { fractal(x, 150, 34);
-      for (var i = 0; i < 9000; i++) { var g = 110 + Math.random() * 90; x.fillStyle = "rgba(" + g + "," + g + "," + g + ",0.35)"; x.fillRect(Math.random() * 512, Math.random() * 512, 1, 2 + Math.random() * 3); } }, 14, 14, true);
-    // radial fade: white centre to black edge, used as an alpha map for soft-edged lawn and contact shadow
+      for (var i = 0; i < 9000; i++) { x.fillStyle = grey(110 + R() * 90 | 0, 0.35); x.fillRect(R() * 512, R() * 512, 1, 2 + R() * 3); } }, 14, 14, true);
+    var texGrain = tex(function (x) { fractal(x, 214, 10);
+      for (var i = 0; i < 150; i++) { var yy = R() * 512; x.strokeStyle = "rgba(90,70,50," + (0.08 + R() * 0.14) + ")"; x.lineWidth = 0.6 + R() * 1.8;
+        x.beginPath(); x.moveTo(0, yy); x.bezierCurveTo(170, yy + (R() * 14 - 7), 340, yy + (R() * 14 - 7), 512, yy + (R() * 16 - 8)); x.stroke(); }
+      for (var k = 0; k < 6; k++) { x.strokeStyle = "rgba(80,60,40,0.18)"; x.lineWidth = 1; x.beginPath(); x.ellipse(R() * 512, R() * 512, 14 + R() * 20, 4 + R() * 4, 0, 0, 7); x.stroke(); } }, 1 / 1.2, 1 / 1.2, true);
+    var texPlanks = tex(function (x) { fractal(x, 212, 12);
+      for (var r = 0; r < 8; r++) { var v = R() * 26 - 13; x.fillStyle = "rgba(" + (128 + v) + "," + (128 + v) + "," + (128 + v) + ",0.18)"; x.fillRect(0, r * 64, 512, 64);
+        for (var i = 0; i < 12; i++) { var yy = r * 64 + R() * 64; x.strokeStyle = "rgba(90,70,50,0.13)"; x.lineWidth = 1; x.beginPath(); x.moveTo(0, yy); x.lineTo(512, yy + R() * 4 - 2); x.stroke(); }
+        x.fillStyle = "rgba(50,40,30,0.55)"; x.fillRect(0, r * 64, 512, 2); x.fillRect(R() * 512, r * 64, 2, 64); } }, 1 / 1.44, 1 / 1.44, true);
+    function tiles(cols, rows, base, grout, bond, jitter) { return function (x) {
+      x.fillStyle = grey(grout); x.fillRect(0, 0, 512, 512);
+      var tw = 512 / cols, th = 512 / rows;
+      for (var j = 0; j < rows; j++) for (var i = -1; i <= cols; i++) {
+        var ox = bond && j % 2 ? tw / 2 : 0, v = base + (R() * 2 - 1) * (jitter || 5);
+        x.fillStyle = grey(v | 0); x.fillRect(i * tw + ox + 2.5, j * th + 2.5, tw - 5, th - 5);
+        x.fillStyle = "rgba(255,255,255,0.07)"; x.fillRect(i * tw + ox + 2.5, j * th + 2.5, tw - 5, (th - 5) * 0.35);
+      } }; }
+    var texSubway = tex(tiles(4, 16, 246, 205, true), 1 / 1.2, 1 / 1.2, true);          // 300 x 75 brick-bond
+    var texSquare = tex(tiles(4, 4, 244, 200, false), 1 / 1.2, 1 / 1.2, true);         // 300 x 300
+    var texLarge = tex(tiles(4, 4, 238, 186, false, 7), 1 / 2.4, 1 / 2.4, true);        // 600 x 600
+    var texFinger = tex(tiles(16, 4, 236, 196, true, 9), 1 / 1.2, 1 / 1.2, true);       // vertical finger tiles
+    var texPavers = tex(tiles(4, 4, 232, 150, false, 12), 1 / 2.4, 1 / 2.4, true);      // 600 x 600 outdoor
+    var texMarble = tex(function (x) { fractal(x, 242, 6);
+      x.lineCap = "round";
+      for (var i = 0; i < 26; i++) {
+        var sx = R() * 512, sy = R() * 512, a = R() * Math.PI, len = 180 + R() * 360, w = i < 5 ? 2.4 : 0.8 + R();
+        x.strokeStyle = "rgba(" + (118 + R() * 40 | 0) + "," + (116 + R() * 36 | 0) + "," + (112 + R() * 30 | 0) + "," + (i < 5 ? 0.55 : 0.28) + ")";
+        x.lineWidth = w; x.shadowColor = "rgba(120,116,110,0.5)"; x.shadowBlur = i < 5 ? 10 : 4;
+        x.beginPath(); x.moveTo(sx, sy);
+        for (var s = 1; s <= 6; s++) { var t2 = s / 6; x.quadraticCurveTo(sx + Math.cos(a) * len * (t2 - 0.08) + (R() * 40 - 20), sy + Math.sin(a) * len * (t2 - 0.08) + (R() * 40 - 20), sx + Math.cos(a) * len * t2, sy + Math.sin(a) * len * t2); }
+        x.stroke();
+      } x.shadowBlur = 0; }, 1 / 2, 1 / 2, true);
+    var texRibs = tex(function (x) { for (var i = 0; i < 16; i++) { var g = x.createLinearGradient(i * 32, 0, i * 32 + 32, 0);
+      g.addColorStop(0, grey(150)); g.addColorStop(0.3, grey(255)); g.addColorStop(0.55, grey(232)); g.addColorStop(0.8, grey(200)); g.addColorStop(1, grey(150)); x.fillStyle = g; x.fillRect(i * 32, 0, 32, 512); } }, 1 / 1.2, 1 / 1.2, true);
+    var texBoards = tex(function (x) { for (var i = 0; i < 8; i++) { var g = x.createLinearGradient(0, i * 64, 0, i * 64 + 64);
+      g.addColorStop(0, grey(252)); g.addColorStop(0.82, grey(232)); g.addColorStop(1, grey(158)); x.fillStyle = g; x.fillRect(0, i * 64, 512, 64); } }, 1 / 1.44, 1 / 1.44, true);
+    var texRoof = tex(function (x) { fractal(x, 132, 8);
+      for (var row = 0, y = -8; y < 512; y += 30, row++) { var off = (row % 2) * 29;
+        for (var t0 = off - 58; t0 < 570; t0 += 58) { x.strokeStyle = grey(55, 0.55); x.lineWidth = 2.5; x.beginPath(); x.moveTo(t0, y + 30); x.lineTo(t0 + 58, y + 30); x.stroke();
+          x.strokeStyle = grey(70, 0.3); x.lineWidth = 1.5; x.beginPath(); x.moveTo(t0, y); x.lineTo(t0, y + 30); x.stroke(); } } }, 0.35, 0.3);
+    var texBrick = tex(function (x) { x.fillStyle = grey(150); x.fillRect(0, 0, 512, 512);
+      for (var row = 0, y = 0; y < 512; y += 24, row++) { var off = (row % 2) * 25;
+        for (var bx = off - 50; bx < 562; bx += 50) { var v = 196 + (R() * 30 - 15); x.fillStyle = "rgb(" + (v | 0) + "," + (v - 10 | 0) + "," + (v - 18 | 0) + ")"; x.fillRect(bx + 2, y + 2, 46, 20); } } }, 0.43, 0.55, true);
     function radial(inner) { var c = document.createElement("canvas"); c.width = c.height = 256; var x = c.getContext("2d");
       var g = x.createRadialGradient(128, 128, 128 * inner, 128, 128, 128); g.addColorStop(0, "#fff"); g.addColorStop(1, "#000");
       x.fillStyle = g; x.fillRect(0, 0, 256, 256); return new T.CanvasTexture(c); }
-    var fadeSoft = radial(0.35), fadeWide = radial(0.55);
-    var texRoof = tex(function (x) { fractal(x, 132, 8);
-      var tw = 58, th = 30;
-      for (var row = 0, y = -8; y < 512; y += th, row++) { var off = (row % 2) * tw / 2;
-        for (var t0 = off - tw; t0 < 512 + tw; t0 += tw) {
-          var v = Math.random() * 16 - 8; x.fillStyle = "rgba(" + (128 + v) + "," + (128 + v) + "," + (128 + v) + ",0.5)"; x.fillRect(t0 + 2, y + 2, tw - 4, th - 4);
-          x.strokeStyle = "rgba(55,55,55,0.55)"; x.lineWidth = 2.5; x.beginPath(); x.moveTo(t0, y + th); x.lineTo(t0 + tw, y + th); x.stroke();
-          x.strokeStyle = "rgba(70,70,70,0.3)"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(t0, y); x.lineTo(t0, y + th); x.stroke();
-        } }
-    }, 0.35, 0.3);
-    var texWood = tex(function (x) { fractal(x, 134, 8);
-      for (var i = 0; i < 120; i++) { var yy = Math.random() * 512, a = 0.10 + Math.random() * 0.14; x.strokeStyle = "rgba(70,58,44," + a + ")"; x.lineWidth = 1 + Math.random() * 2; x.beginPath(); x.moveTo(0, yy); x.bezierCurveTo(170, yy + (Math.random() * 12 - 6), 340, yy + (Math.random() * 12 - 6), 512, yy + (Math.random() * 14 - 7)); x.stroke(); }
-    }, 1, 3);
-    var texBrick = tex(function (x) { fractal(x, 134, 8);
-      var bh = 24, bw = 50;
-      for (var row = 0, y = 0; y < 512; y += bh, row++) { var off = (row % 2) * bw / 2;
-        for (var bx = off - bw; bx < 512 + bw; bx += bw) { var v = Math.random() * 20 - 10; x.fillStyle = "rgba(" + (140 + v) + "," + (132 + v) + "," + (122 + v) + ",0.35)"; x.fillRect(bx + 2, y + 2, bw - 4, bh - 4); }
-        x.strokeStyle = "rgba(70,70,70,0.5)"; x.lineWidth = 3; x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke();
-        for (var b2 = off; b2 <= 512; b2 += bw) { x.beginPath(); x.moveTo(b2, y); x.lineTo(b2, y + bh); x.stroke(); } }
-    }, 0.43, 0.55);
-    // tiles: 4 x 4 per texture, grout lines; colour map (tinted by material colour)
-    function tileDraw(base, grout) { return function (x) {
-      x.fillStyle = "rgb(" + base + "," + base + "," + base + ")"; x.fillRect(0, 0, 512, 512);
-      for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) { var v = base + (Math.random() * 10 - 5); x.fillStyle = "rgb(" + v + "," + v + "," + v + ")"; x.fillRect(i * 128 + 3, j * 128 + 3, 122, 122); }
-      x.fillStyle = "rgb(" + grout + "," + grout + "," + grout + ")";
-      for (var k = 0; k <= 4; k++) { x.fillRect(k * 128 - 3, 0, 6, 512); x.fillRect(0, k * 128 - 3, 512, 6); }
-    }; }
-    var texTileS = tex(tileDraw(246, 196), 1 / 1.2, 1 / 1.2, true);   // 300 mm tiles
-    var texTileL = tex(tileDraw(240, 168), 1 / 2.4, 1 / 2.4, true);   // 600 mm tiles
-    // weatherboards (horizontal) and battens (vertical)
-    var texBoards = tex(function (x) { for (var i = 0; i < 8; i++) { var g = x.createLinearGradient(0, i * 64, 0, i * 64 + 64); g.addColorStop(0, "rgb(250,250,250)"); g.addColorStop(0.85, "rgb(226,226,226)"); g.addColorStop(1, "rgb(150,150,150)"); x.fillStyle = g; x.fillRect(0, i * 64, 512, 64); } }, 1 / 1.44, 1 / 1.44, true);
-    var texBattens = tex(function (x) { x.fillStyle = "rgb(70,70,70)"; x.fillRect(0, 0, 512, 512); for (var i = 0; i < 16; i++) { var v = 225 + Math.random() * 20; x.fillStyle = "rgb(" + v + "," + v + "," + v + ")"; x.fillRect(i * 32 + 4, 0, 24, 512); } }, 1 / 1.28, 1 / 1.28, true);
-    var texPlanks = tex(function (x) { fractal(x, 200, 14);
-      for (var r = 0; r < 8; r++) { var off = Math.random() * 512; x.fillStyle = "rgba(60,48,36,0.45)"; x.fillRect(0, r * 64, 512, 2); x.fillRect(off, r * 64, 2, 64);
-        for (var i = 0; i < 10; i++) { var yy = r * 64 + Math.random() * 64; x.strokeStyle = "rgba(90,70,50,0.12)"; x.lineWidth = 1; x.beginPath(); x.moveTo(0, yy); x.lineTo(512, yy + Math.random() * 4 - 2); x.stroke(); } }
-    }, 1 / 1.44, 1 / 1.44, true);
+    var fadeSoft = radial(0.2), fadeWide = radial(0.55);
 
-    // colours are written as sRGB swatches and converted to linear so the final image shows the intended tones
-    function MP(color, rough, metal, extra) {
-      var o = { color: new T.Color(color).convertSRGBToLinear(), roughness: rough, metalness: metal || 0 };
-      if (extra) for (var k in extra) o[k] = extra[k];
-      return new T.MeshPhysicalMaterial(o);
-    }
-    function M(color, rough, metal, extra) {
-      var o = { color: new T.Color(color).convertSRGBToLinear(), roughness: rough, metalness: metal || 0 };
-      if (extra) for (var k in extra) o[k] = extra[k];
-      if (o.emissive) o.emissive.convertSRGBToLinear();
-      return new T.MeshStandardMaterial(o);
-    }
+    function lin(c) { return new T.Color(c).convertSRGBToLinear(); }
+    function M(color, rough, metal, ex) { var o = { color: lin(color), roughness: rough, metalness: metal || 0 }; if (ex) for (var k in ex) o[k] = ex[k]; if (o.emissive) o.emissive = lin(o.emissive); return new T.MeshStandardMaterial(o); }
+    function P(color, rough, metal, ex) { var o = { color: lin(color), roughness: rough, metalness: metal || 0 }; if (ex) for (var k in ex) o[k] = ex[k]; return new T.MeshPhysicalMaterial(o); }
+    function wood(c, rough) { return M(c, rough == null ? 0.62 : rough, 0, { map: texGrain, bumpMap: texGrain, bumpScale: 0.02 }); }
+    function leaf(c) { return M(c, 0.85, 0, { flatShading: true }); }
+
     return {
-      ground: M(0xB0AC9F, 1, 0, { bumpMap: texGround, bumpScale: 0.085 }),
-      lawn: M(0xA4A891, 1, 0, { bumpMap: texLawn, bumpScale: 0.06, map: texLawn, alphaMap: fadeWide, transparent: true, depthWrite: false }),
+      ground: M(0x9EA389, 1, 0, { map: texLawn, bumpMap: texLawn, bumpScale: 0.05 }),
+      lawn: M(0x93A07A, 1, 0, { alphaMap: fadeSoft, transparent: true, opacity: 0.5, depthWrite: false }),
       contact: new T.MeshBasicMaterial({ color: 0x1a1915, alphaMap: fadeSoft, transparent: true, opacity: 0.32, depthWrite: false }),
-      slab: M(0x8C8A84, 0.95, 0, { bumpMap: texConc, bumpScale: 0.085 }),
-      pavers: M(0xB4AFA4, 0.95, 0, { bumpMap: texConc, bumpScale: 0.06 }),
-      render: M(0xBBB4A6, 0.95, 0, { bumpMap: texRender, bumpScale: 0.075 }),
-      renderLight: M(0xCBC5B9, 0.95, 0, { bumpMap: texRender, bumpScale: 0.06 }),
-      plaster: M(0xD6D1C7, 0.95, 0, { bumpMap: texRender, bumpScale: 0.02 }),
-      massing: M(0xF5F3EE, 0.9, 0, { transparent: true, opacity: 0.38, depthWrite: false }),
-      massRoof: M(0xEFEDE8, 0.9, 0, { transparent: true, opacity: 0.32, depthWrite: false }),
-      brick: M(0xACA394, 0.92, 0, { bumpMap: texBrick, bumpScale: 0.085 }),
+      blob: new T.MeshBasicMaterial({ color: 0x1a1915, alphaMap: fadeSoft, transparent: true, opacity: 0.38, depthWrite: false }),
+      slab: M(0xA19D95, 0.95, 0, { map: texConcMap, bumpMap: texConc, bumpScale: 0.06 }),
+      plinth: M(0x8F8B84, 0.95, 0, { bumpMap: texConc, bumpScale: 0.05 }),
+      drive: M(0xC4C0B8, 0.95, 0, { map: texPavers, bumpMap: texConc, bumpScale: 0.04 }),
+      pavLight: M(0xDCD9D2, 0.9, 0, { map: texPavers, bumpMap: texConc, bumpScale: 0.04 }),
+      pavTrav: M(0xE3D6C0, 0.85, 0, { map: texPavers, bumpMap: texConc, bumpScale: 0.05 }),
+      pavStone: M(0xC2BBAF, 0.85, 0, { map: texPavers, bumpMap: texConc, bumpScale: 0.04 }),
+      // walls
+      renderWhite: M(0xECE9E2, 0.95, 0, { bumpMap: texRender, bumpScale: 0.06 }),
+      renderWarm: M(0xE7E0D3, 0.95, 0, { bumpMap: texRender, bumpScale: 0.06 }),
+      renderGrey: M(0xDCD8D0, 0.95, 0, { bumpMap: texRender, bumpScale: 0.06 }),
+      brick: M(0xC9B9A6, 0.92, 0, { map: texBrick, bumpMap: texBrick, bumpScale: 0.05 }),
+      boardWhite: M(0xEDEAE4, 0.85, 0, { map: texBoards }),
+      oakBatten: wood(0xB9875A), charBatten: M(0x3C3936, 0.75, 0, { map: texGrain, bumpMap: texGrain, bumpScale: 0.02 }),
+      // roofs and trims
+      roofSurf: M(0xC4C5BE, 0.45, 0.3, { map: texRibs }), roofBasalt: M(0x706F6C, 0.45, 0.35, { map: texRibs }), roofMon: M(0x3B3C3F, 0.45, 0.35, { map: texRibs }),
       roofTile: M(0x8E8A81, 0.86, 0, { bumpMap: texRoof, bumpScale: 0.085 }),
-      roofMetal: M(0x4F4D4A, 0.5, 0.35, { map: texBattens }),
-      roofSheet: M(0x8F8C86, 0.55, 0.3),
-      timber: M(0x8F6A3E, 0.72, 0, { bumpMap: texWood, bumpScale: 0.045 }),
-      pine: M(0xBC9C6C, 0.78, 0, { bumpMap: texWood, bumpScale: 0.04 }),
-      composite: M(0x6C6761, 0.85, 0, { bumpMap: texWood, bumpScale: 0.02 }),
-      cladLight: M(0xD6D1C6, 0.9, 0, { map: texBoards }),
-      cladDark: M(0x56504A, 0.85, 0, { map: texBattens }),
-      glass: MP(0xCAD4D4, 0.02, 0, { transparent: true, opacity: 0.26, clearcoat: 1, clearcoatRoughness: 0.02, reflectivity: 0.9, envMapIntensity: 2.2, depthWrite: false }),
-      frameAlu: M(0x9E9A92, 0.5, 0.25),
-      frameBlack: M(0x2A2A29, 0.55, 0.2),
-      gap: M(0x3A3936, 1, 0),
-      porcelain: MP(0xF3F1EC, 0.16, 0, { clearcoat: 0.8, clearcoatRoughness: 0.08 }),
-      water: MP(0xBFC9C9, 0.02, 0, { clearcoat: 1, clearcoatRoughness: 0, envMapIntensity: 1.6 }),
-      tileLight: M(0xF2EFE9, 0.35, 0, { map: texTileS }),
-      tileStone: M(0x9A958C, 0.4, 0, { map: texTileL }),
-      floorTile: M(0xE6E2DA, 0.45, 0, { map: texTileL }),
-      stoneLight: MP(0xEAE6DE, 0.26, 0, { clearcoat: 0.5, clearcoatRoughness: 0.15 }),
-      stoneDark: MP(0x2E2C2A, 0.3, 0, { clearcoat: 0.4, clearcoatRoughness: 0.18, envMapIntensity: 0.55 }),
-      cabWhite: M(0xE0DBD1, 0.6, 0),
-      cabTimber: M(0xA07D58, 0.62, 0, { bumpMap: texWood, bumpScale: 0.03 }),
-      cabDark: M(0x2F2D2B, 0.6, 0, { envMapIntensity: 0.6 }),
-      chrome: M(0xCFCFCF, 0.18, 0.9),
-      brass: M(0xB8955E, 0.3, 0.9),
-      steel: M(0xB9B8B4, 0.32, 0.75),
-      blackGlass: M(0x1B1B1B, 0.12, 0.3),
-      mirror: M(0xD7DBDC, 0.04, 0.95),
-      lamp: M(0xFFF1DA, 0.6, 0, { emissive: new T.Color(0xFFD9A3), emissiveIntensity: 0.9 }),
-      floorTimber: M(0xB08B60, 0.6, 0, { map: texPlanks }),
-      floorDark: M(0x6D5843, 0.55, 0, { map: texPlanks }),
-      carpet: M(0x8F8C86, 1, 0, { bumpMap: texConc, bumpScale: 0.02 }),
-      fabric: M(0x6F6B65, 1, 0),
-      gdoor: M(0xB2ACA0, 0.9, 0, { map: texBoards })
+      trimSurf: M(0xE6E4DD, 0.5, 0.25), trimBasalt: M(0x6B6A67, 0.5, 0.3), trimMon: M(0x343538, 0.5, 0.3),
+      frameSilver: M(0xB8B6B1, 0.35, 0.6), frameBronze: M(0x50473E, 0.45, 0.4), frameBlack: M(0x29292A, 0.5, 0.3),
+      glass: P(0xC6D0D0, 0.02, 0, { transparent: true, opacity: 0.24, clearcoat: 1, clearcoatRoughness: 0.02, reflectivity: 0.9, envMapIntensity: 2.2, depthWrite: false }),
+      frost: M(0xF4F2EE, 0.6, 0, { transparent: true, opacity: 0.6, depthWrite: false }),
+      sheer: M(0xF1EBE1, 0.9, 0, { transparent: true, opacity: 0.85, side: T.DoubleSide }),
+      inside: M(0x4A4540, 1, 0), niche: M(0xCFC8BC, 0.9, 0), sky: M(0xE9EDEC, 1, 0, { emissive: 0xE9EDEC, emissiveIntensity: 0.55 }),
+      gdoorLight: M(0xE2E0D7, 0.55, 0.2, { map: texBoards }), gdoorDark: M(0x3E3D3E, 0.55, 0.2, { map: texBoards }),
+      // timber
+      oak: wood(0xC49A6C), spottedGum: wood(0x9A6D47), walnut: wood(0x6E4D36, 0.55), blackbutt: wood(0xC59F74), pine: wood(0xD8B888, 0.7),
+      composite: M(0x75706A, 0.8, 0, { map: texGrain, bumpMap: texGrain, bumpScale: 0.015 }),
+      floorOak: M(0xC9A274, 0.55, 0, { map: texPlanks }), floorWalnut: M(0x7A5940, 0.5, 0, { map: texPlanks }),
+      // interiors
+      plaster: M(0xF0ECE5, 0.95, 0, { bumpMap: texRender, bumpScale: 0.015 }), plasterWarm: M(0xEAE3D7, 0.95, 0, { bumpMap: texRender, bumpScale: 0.015 }),
+      paintSage: M(0x9DA894, 0.95, 0, { bumpMap: texRender, bumpScale: 0.015 }),
+      tileSubway: M(0xF6F4EF, 0.25, 0, { map: texSubway }), tileSquare: M(0xF2F0EB, 0.3, 0, { map: texSquare }),
+      tileFloor: M(0xD8D5CE, 0.45, 0, { map: texLarge }), tileTrav: M(0xE6D8C2, 0.5, 0, { map: texLarge }),
+      tileSage: M(0x9FAC97, 0.25, 0, { map: texFinger }), tileStoneDark: M(0x7A746C, 0.4, 0, { map: texLarge }),
+      marble: P(0xF5F3EF, 0.22, 0, { map: texMarble, clearcoat: 0.6, clearcoatRoughness: 0.12 }),
+      stoneWhite: P(0xEFECE6, 0.26, 0, { clearcoat: 0.5, clearcoatRoughness: 0.15 }),
+      cabWhite: M(0xEAE6DF, 0.55, 0), cabSage: M(0x93A08C, 0.6, 0), cabCharcoal: M(0x33312F, 0.55, 0, { envMapIntensity: 0.6 }),
+      chrome: M(0xD6D6D6, 0.15, 0.95), brass: M(0xC09A5E, 0.28, 0.95), nickel: M(0xBDB8AF, 0.3, 0.85), steel: M(0xC2C1BD, 0.3, 0.8), blackMetal: M(0x262626, 0.45, 0.5),
+      blackGlass: P(0x1A1A1A, 0.1, 0.2, { clearcoat: 1 }),
+      porcelain: P(0xF6F4F0, 0.15, 0, { clearcoat: 0.8, clearcoatRoughness: 0.08, side: T.DoubleSide }),
+      water: P(0xC0CACA, 0.02, 0, { clearcoat: 1, clearcoatRoughness: 0, envMapIntensity: 1.6 }),
+      mirror: M(0xDCE0E1, 0.03, 1),
+      lamp: M(0xFFF3DE, 0.5, 0, { emissive: 0xFFD9A6, emissiveIntensity: 1.1 }),
+      linenOat: M(0xD9CFBF, 1, 0), linenWhite: M(0xF0ECE5, 1, 0), fabricCharcoal: M(0x4C4946, 1, 0), fabricSage: M(0x98A290, 1, 0), rug: M(0xDCD3C4, 1, 0),
+      carpet: M(0x8F8C86, 1, 0, { bumpMap: texConc, bumpScale: 0.02 }), carpetWarm: M(0xA69F94, 1, 0, { bumpMap: texConc, bumpScale: 0.02 }),
+      polished: P(0xB9B4AC, 0.32, 0, { map: texConcMap, clearcoat: 0.35, clearcoatRoughness: 0.3 }),
+      // landscape
+      leafA: leaf(0x7E8E6E), leafB: leaf(0x6C7C60), leafC: leaf(0x93A082), leafD: leaf(0x5F6E57), trunk: M(0x6E5D4B, 0.9, 0), soil: M(0x5C5045, 1, 0),
+      potStone: M(0xC8C1B5, 0.9, 0, { bumpMap: texConc, bumpScale: 0.04 }), potCharcoal: M(0x403E3B, 0.85, 0),
+      // existing building, shown as a see-through ghost
+      massing: M(0xE9E6E0, 0.9, 0, { transparent: true, opacity: 0.5, depthWrite: false }),
+      massRoof: M(0xEFEDE8, 0.9, 0, { transparent: true, opacity: 0.3, depthWrite: false })
     };
+  }
+
+  // finish palettes: 0 Essential, 1 Elevated, 2 Luxe
+  function extPal(M, f) {
+    return [
+      { wall: M.renderWhite, feat: M.boardWhite, featType: "board", roof: M.roofSurf, trim: M.trimSurf, frame: M.frameSilver, door: M.oak, pav: M.pavLight, soffit: M.trimSurf, accent: M.chrome, gdoor: M.gdoorLight, pot: M.potStone },
+      { wall: M.renderWarm, feat: M.oakBatten, featType: "batten", roof: M.roofBasalt, trim: M.trimBasalt, frame: M.frameBronze, door: M.spottedGum, pav: M.pavTrav, soffit: M.oak, accent: M.nickel, gdoor: M.gdoorDark, pot: M.potStone },
+      { wall: M.renderGrey, feat: M.charBatten, featType: "batten", roof: M.roofMon, trim: M.trimMon, frame: M.frameBlack, door: M.blackbutt, pav: M.pavStone, soffit: M.blackbutt, accent: M.brass, gdoor: M.gdoorDark, pot: M.potCharcoal }
+    ][f];
   }
 
   /* ---------------- Geometry kit ---------------- */
   var GEO = {}, GEOn = 0;
   function geo(key, make) { if (!GEO[key]) { GEO[key] = make(); GEOn++; } return GEO[key]; }
   function clearGeo() { for (var k in GEO) GEO[k].dispose(); GEO = {}; GEOn = 0; }
-  function roundedBox(w, h, d) {
-    var r = Math.min(0.025, w * 0.3, h * 0.3, d * 0.3);
-    var key = "b" + w.toFixed(3) + "_" + h.toFixed(3) + "_" + d.toFixed(3);
+  function roundedBox(w, h, d, rad) {
+    var r = Math.min(rad == null ? 0.02 : rad, w * 0.45, h * 0.45, d * 0.45);
+    var key = "b" + w.toFixed(3) + "_" + h.toFixed(3) + "_" + d.toFixed(3) + "_" + r.toFixed(3);
     return geo(key, function () {
       if (!(r > 0.004)) return new T.BoxGeometry(w, h, d);
       var s = new T.Shape();
@@ -710,336 +740,652 @@ window.__loadStudio = function () {
       s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, Math.PI / 2, false);
       s.lineTo(-w / 2 + r, h / 2); s.absarc(-w / 2 + r, h / 2 - r, r, Math.PI / 2, Math.PI, false);
       s.lineTo(-w / 2, -h / 2 + r); s.absarc(-w / 2 + r, -h / 2 + r, r, Math.PI, Math.PI * 1.5, false);
-      var g = new T.ExtrudeGeometry(s, { depth: Math.max(0.001, d - 2 * r), bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelSegments: 2, curveSegments: 2, steps: 1 });
+      var g = new T.ExtrudeGeometry(s, { depth: Math.max(0.001, d - 2 * r), bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelSegments: r > 0.05 ? 4 : 2, curveSegments: r > 0.05 ? 6 : 2, steps: 1 });
       g.center(); g.computeVertexNormals(); return g;
     });
   }
+  function lathe(key, pts, seg) { return geo("l" + key, function () { return new T.LatheGeometry(pts.map(function (p) { return new T.Vector2(p[0], p[1]); }), seg || 40); }); }
+  var ICO = null; function ico() { return ICO || (ICO = geo("ico", function () { return new T.IcosahedronGeometry(1, 1); })); }
 
-  function Kit(M) { this.M = M; this.g = new T.Group(); this.parts = []; this.n = {}; }
-  Kit.prototype.add = function (mesh, h, stage, o) {
+  function Kit(M) { this.M = M; this.g = new T.Group(); this.parts = []; this.n = {}; this.r = rng(1); }
+  // register a positioned mesh for the staged build; h is its height for the grow-from-base animation
+  Kit.prototype.put = function (mesh, h, stage, o) {
     o = o || {};
     mesh.castShadow = !o.ns && !(mesh.material.transparent && mesh.material.opacity < 0.5); mesh.receiveShadow = true;
     var i = this.n[stage] = (this.n[stage] || 0) + 1;
-    mesh.userData = { ty: mesh.position.y, h: h, stage: stage, i: i, demo: !!o.demo };
+    mesh.userData = { ty: mesh.position.y, h: h, sy: mesh.scale.y, stage: stage, i: i, demo: !!o.demo, base: !!o.base };
     this.g.add(mesh); this.parts.push(mesh); return mesh;
   };
   // box with its base at y0, centred on (cx, cz). Thin-in-x boxes are built rotated so textures run the right way.
   Kit.prototype.box = function (w, h, d, mat, cx, y0, cz, stage, o) {
-    var rot = w < d * 0.6, m = new T.Mesh(rot ? roundedBox(d, h, w) : roundedBox(w, h, d), mat);
+    o = o || {};
+    var rot = w < d * 0.6, m = new T.Mesh(rot ? roundedBox(d, h, w, o.r) : roundedBox(w, h, d, o.r), mat);
     if (rot) m.rotation.y = Math.PI / 2;
-    m.position.set(cx, y0 + h / 2, cz); return this.add(m, h, stage, o);
+    m.position.set(cx, y0 + h / 2, cz); return this.put(m, h, stage, o);
   };
   Kit.prototype.cyl = function (rt, rb, h, mat, cx, y0, cz, stage, o) {
-    var m = new T.Mesh(geo("c" + rt + "_" + rb + "_" + h.toFixed(3), function () { return new T.CylinderGeometry(rt, rb, h, 28); }), mat);
-    m.position.set(cx, y0 + h / 2, cz); return this.add(m, h, stage, o);
+    var seg = (o && o.seg) || 28;
+    var m = new T.Mesh(geo("c" + rt + "_" + rb + "_" + h.toFixed(3) + "_" + seg, function () { return new T.CylinderGeometry(rt, rb, h, seg); }), mat);
+    m.position.set(cx, y0 + h / 2, cz); return this.put(m, h, stage, o);
+  };
+  // horizontal rod (gutters, rails): axis "x" or "z"
+  Kit.prototype.rod = function (len, r, mat, cx, cy, cz, axis, stage) {
+    var m = new T.Mesh(geo("rod" + len.toFixed(2) + "_" + r, function () { return new T.CylinderGeometry(r, r, len, 14); }), mat);
+    if (axis === "x") m.rotation.z = Math.PI / 2; else m.rotation.x = Math.PI / 2;
+    m.position.set(cx, cy, cz); return this.put(m, r * 2, stage, { ns: 1 });
+  };
+  Kit.prototype.sphere = function (r, mat, cx, cy, cz, stage, o) {
+    var m = new T.Mesh(geo("sph" + r, function () { return new T.SphereGeometry(r, 24, 16); }), mat);
+    m.position.set(cx, cy, cz); return this.put(m, r * 2, stage, o);
+  };
+  Kit.prototype.blob = function (w, d, cx, cz, stage) {
+    var m = new T.Mesh(geo("blob", function () { return new T.PlaneGeometry(1, 1); }), this.M.blob);
+    m.rotation.x = -Math.PI / 2; m.scale.set(w, d, 1); m.position.set(cx, 0.006, cz); m.renderOrder = 2;
+    return this.put(m, 0.01, stage, { ns: 1 });
   };
   // gable roof: span across, depth along the ridge. alongX = ridge runs along x.
   Kit.prototype.gable = function (span, depth, rise, mat, cx, y0, cz, stage, alongX, o) {
-    var t = 0.28, key = "r" + span.toFixed(2) + "_" + depth.toFixed(2) + "_" + rise.toFixed(2);
+    var t = 0.24, key = "r" + span.toFixed(2) + "_" + depth.toFixed(2) + "_" + rise.toFixed(2);
     var gm = geo(key, function () {
       var sh = new T.Shape(); sh.moveTo(-span / 2, -t); sh.lineTo(span / 2, -t); sh.lineTo(span / 2, 0); sh.lineTo(0, rise); sh.lineTo(-span / 2, 0); sh.lineTo(-span / 2, -t);
       var g = new T.ExtrudeGeometry(sh, { depth: depth, bevelEnabled: false }); g.translate(0, t, -depth / 2); g.computeVertexNormals(); return g;
     });
     var m = new T.Mesh(gm, mat); if (alongX) m.rotation.y = Math.PI / 2;
     m.position.set(cx, y0, cz);
-    var r = this.add(m, rise + t, stage, o); r.userData.ty = y0; r.userData.base = true; return r;
+    o = o || {}; o.base = true; return this.put(m, rise + t, stage, o);
   };
   // panel on a facade. face "z": plane z = n facing +z (u runs along x). face "x": plane x = n facing +x (u runs along z).
   Kit.prototype.face = function (f, u, y0, n, w, h, t, mat, stage, o) {
     return f === "z" ? this.box(w, h, t, mat, u, y0, n + t / 2, stage, o) : this.box(t, h, w, mat, n + t / 2, y0, u, stage, o);
   };
-  Kit.prototype.win = function (f, u, y0, n, w, h, fr, stage) {
-    var M = this.M;
-    this.face(f, u, y0 - 0.03, n, w + 0.06, h + 0.06, 0.02, M.gap, stage, { ns: 1 });
-    this.face(f, u, y0 + 0.04, n + 0.02, w - 0.08, h - 0.08, 0.012, M.glass, stage, { ns: 1 });
-    this.face(f, u, y0, n + 0.015, w, 0.05, 0.05, fr, stage, { ns: 1 });
-    this.face(f, u, y0 + h - 0.05, n + 0.015, w, 0.05, 0.05, fr, stage, { ns: 1 });
-    this.face(f, u - w / 2 + 0.025, y0, n + 0.015, 0.05, h, 0.05, fr, stage, { ns: 1 });
-    this.face(f, u + w / 2 - 0.025, y0, n + 0.015, 0.05, h, 0.05, fr, stage, { ns: 1 });
-    if (w > 1.3) this.face(f, u, y0, n + 0.015, 0.045, h, 0.045, fr, stage, { ns: 1 });
-    this.face(f, u, y0 - 0.07, n, w + 0.14, 0.05, 0.12, M.slab, stage, { ns: 1 });
+
+  /* ---- architectural details ---- */
+  // full roof assembly with eaves, fascia, gutters, barge boards, ridge cap and downpipes (ridge along x)
+  Kit.prototype.roof = function (cx, cz, W, D, y, rise, e, pal, stage, opts) {
+    opts = opts || {};
+    var L = W + 2 * e, zf = cz + D / 2 + e, zb = cz - D / 2 - e, t = 0.24;
+    this.gable(D + 2 * e, L, rise, pal.roof, cx, y, cz, stage, true);
+    this.box(L, 0.3, 0.04, pal.trim, cx, y - 0.04, zf + 0.02, stage, { ns: 1 });
+    this.box(L, 0.3, 0.04, pal.trim, cx, y - 0.04, zb - 0.02, stage, { ns: 1 });
+    this.rod(L, 0.075, pal.trim, cx, y + 0.06, zf + 0.1, "x", stage);
+    this.rod(L, 0.075, pal.trim, cx, y + 0.06, zb - 0.1, "x", stage);
+    var run = D / 2 + e, len = Math.hypot(run, rise), th = Math.atan2(rise, run);
+    var self = this;
+    [cx - L / 2 - 0.02, cx + L / 2 + 0.02].forEach(function (bx) {
+      var a = self.box(0.04, 0.24, len, pal.trim, bx, y + t + rise / 2 - 0.12, cz + run / 2, stage, { ns: 1 }); a.rotation.x = th; a.userData.ty = a.position.y;
+      var b = self.box(0.04, 0.24, len, pal.trim, bx, y + t + rise / 2 - 0.12, cz - run / 2, stage, { ns: 1 }); b.rotation.x = -th; b.userData.ty = b.position.y;
+    });
+    this.box(L, 0.07, 0.24, pal.trim, cx, y + t + rise - 0.04, cz, stage, { ns: 1 });
+    if (opts.downpipes !== false) {
+      this.cyl(0.045, 0.045, y + 0.06, pal.trim, cx - W / 2 + 0.25, 0, zf + 0.12, stage, { ns: 1, seg: 12 });
+      this.cyl(0.045, 0.045, y + 0.06, pal.trim, cx + W / 2 - 0.25, 0, zf + 0.12, stage, { ns: 1, seg: 12 });
+    }
   };
-  Kit.prototype.door = function (f, u, y0, n, w, h, panel, fr, stage) {
-    this.face(f, u, y0, n, w + 0.1, h + 0.05, 0.02, this.M.gap, stage, { ns: 1 });
-    this.face(f, u, y0, n + 0.02, w, h, 0.045, panel, stage, { ns: 1 });
-    this.face(f, u + w / 2 - 0.12, y0 + 1.0, n + 0.06, 0.03, 0.22, 0.04, fr, stage, { ns: 1 });
+  // flat / skillion roof with a deep fascia band and lined soffit
+  Kit.prototype.flatRoof = function (cx, cz, W, D, y, e, pal, stage) {
+    this.box(W + 2 * e, 0.34, D + 2 * e, pal.trim, cx, y, cz, stage);
+    this.box(W + 2 * e - 0.08, 0.025, D + 2 * e - 0.08, pal.roof, cx, y + 0.34, cz, stage, { ns: 1 });
+    this.box(W + 2 * e - 0.06, 0.02, D + 2 * e - 0.06, pal.soffit, cx, y - 0.02, cz, stage, { ns: 1 });
+  };
+  // window: dark interior, optional sheer, set-back glass, deep frame, mullion, sill and head flashing
+  Kit.prototype.win = function (f, u, y0, n, w, h, pal, stage, opts) {
+    opts = opts || {}; var M = this.M, fr = pal.frame;
+    this.face(f, u, y0, n, w, h, 0.01, opts.view ? M.sky : M.inside, stage, { ns: 1 });
+    if (!opts.view && this.r() < 0.6) { var sw = w * (0.32 + this.r() * 0.2), side = this.r() < 0.5 ? -1 : 1; this.face(f, u + side * (w - sw) / 2 * 0.92, y0 + 0.06, n + 0.012, sw, h - 0.12, 0.006, M.sheer, stage, { ns: 1 }); }
+    this.face(f, u, y0 + 0.05, n + 0.035, w - 0.1, h - 0.1, 0.01, M.glass, stage, { ns: 1 });
+    this.face(f, u, y0, n, w, 0.055, 0.09, fr, stage, { ns: 1 });
+    this.face(f, u, y0 + h - 0.055, n, w, 0.055, 0.09, fr, stage, { ns: 1 });
+    this.face(f, u - w / 2 + 0.0275, y0, n, 0.055, h, 0.09, fr, stage, { ns: 1 });
+    this.face(f, u + w / 2 - 0.0275, y0, n, 0.055, h, 0.09, fr, stage, { ns: 1 });
+    if (w > 1.3) this.face(f, u, y0, n, 0.05, h, 0.08, fr, stage, { ns: 1 });
+    if (!opts.noSill) this.face(f, u, y0 - 0.06, n, w + 0.16, 0.05, 0.15, opts.view ? fr : pal.trim, stage, { ns: 1 });
+    if (!opts.view) this.face(f, u, y0 + h + 0.02, n, w + 0.12, 0.025, 0.06, pal.trim, stage, { ns: 1 });
+  };
+  // entry door: frame, pivot timber door with grooves and long pull, glass sidelight
+  Kit.prototype.door = function (f, u, y0, n, w, h, pal, stage) {
+    var M = this.M;
+    this.face(f, u + 0.25, y0, n, w + 0.6, h + 0.08, 0.01, M.inside, stage, { ns: 1 });
+    this.face(f, u, y0, n + 0.01, w, h, 0.05, pal.door, stage, { ns: 1 });
+    for (var g = 1; g < 6; g++) this.face(f, u - w / 2 + w * g / 6, y0 + 0.06, n + 0.058, 0.006, h - 0.12, 0.004, M.inside, stage, { ns: 1 });
+    this.face(f, u + w / 2 - 0.13, y0 + 0.75, n + 0.065, 0.03, 0.9, 0.04, pal.accent, stage, { ns: 1 });
+    this.face(f, u + w / 2 + 0.3, y0 + 0.03, n + 0.03, 0.42, h - 0.06, 0.01, M.glass, stage, { ns: 1 });
+    this.face(f, u + 0.25, y0 + h, n, w + 0.66, 0.05, 0.09, pal.frame, stage, { ns: 1 });
+    this.face(f, u + w / 2 + 0.06, y0, n, 0.05, h, 0.09, pal.frame, stage, { ns: 1 });
+    this.face(f, u + w / 2 + 0.53, y0, n, 0.05, h, 0.09, pal.frame, stage, { ns: 1 });
+  };
+  // cladding with real relief: vertical battens or overlapping weatherboards over a facade area
+  Kit.prototype.clad = function (f, u0, u1, y0, y1, n, mat, type, stage) {
+    var len = u1 - u0, i, c = 0;
+    if (type === "batten") { for (i = u0 + 0.05; i < u1 - 0.02 && c < 70; i += 0.1, c++) this.face(f, i, y0, n, 0.05, y1 - y0, 0.045, mat, stage, { ns: 1 }); }
+    else { for (i = y0; i < y1 - 0.05 && c < 30; i += 0.18, c++) this.face(f, u0 + len / 2, i, n + (c % 2) * 0.004, len, 0.172, 0.022, mat, stage, { ns: 1 }); }
+  };
+  Kit.prototype.tree = function (x, z, H, stage) {
+    var M = this.M, r = this.r, leaves = [M.leafA, M.leafB, M.leafC, M.leafD];
+    this.cyl(0.06, 0.11, H * 0.55, M.trunk, x, 0, z, stage, { seg: 10 });
+    var n = 6 + (r() * 3 | 0);
+    for (var i = 0; i < n; i++) {
+      var rad = H * (0.15 + r() * 0.09), ang = r() * Math.PI * 2, d = H * 0.16 * r();
+      var m = new T.Mesh(ico(), leaves[(r() * 4) | 0]); m.scale.set(rad, rad * 0.88, rad);
+      m.position.set(x + Math.cos(ang) * d, H * (0.6 + r() * 0.28), z + Math.sin(ang) * d); this.put(m, rad * 2, stage);
+    }
+    this.blob(H * 0.75, H * 0.75, x, z, stage);
+  };
+  Kit.prototype.shrub = function (x, z, s, stage) {
+    var M = this.M, r = this.r, leaves = [M.leafA, M.leafB, M.leafC, M.leafD], n = 2 + (r() * 3 | 0);
+    for (var i = 0; i < n; i++) { var rad = s * (0.28 + r() * 0.16), m = new T.Mesh(ico(), leaves[(r() * 4) | 0]); m.scale.set(rad, rad * 0.8, rad);
+      m.position.set(x + (r() - 0.5) * s * 0.6, rad * 0.75, z + (r() - 0.5) * s * 0.6); this.put(m, rad * 1.6, stage); }
+  };
+  Kit.prototype.bed = function (cx, cz, w, d, pal, stage) {
+    var M = this.M; this.box(w, 0.32, d, pal.pot, cx, 0, cz, stage, { r: 0.015 }); this.box(w - 0.1, 0.02, d - 0.1, M.soil, cx, 0.3, cz, stage, { ns: 1 });
+    var n = Math.max(1, Math.round(w / 0.7)); for (var i = 0; i < n; i++) { var sx = cx - w / 2 + w * (i + 0.5) / n, m = this.shrub(sx, cz, 0.7, stage); }
+    var self = this; this.g.children.slice(-12).forEach(function (o) { if (o.geometry === ico() && o.position.y < 1.2) { o.position.y += 0.3; o.userData.ty = o.position.y; } });
+  };
+  Kit.prototype.pot = function (x, z, rad, h, mat, stage, tall) {
+    var M = this.M; this.cyl(rad, rad * 0.78, h, mat, x, 0, z, stage); this.cyl(rad * 0.92, rad * 0.92, 0.02, M.soil, x, h - 0.03, z, stage, { ns: 1 });
+    var r = this.r, n = tall ? 5 : 3, leaves = [M.leafA, M.leafB, M.leafC];
+    for (var i = 0; i < n; i++) { var s = rad * (tall ? 0.9 : 1.1) * (0.7 + r() * 0.4), m = new T.Mesh(ico(), leaves[(r() * 3) | 0]); m.scale.set(s, s * (tall ? 1.4 : 0.9), s);
+      m.position.set(x + (r() - 0.5) * rad, h + s * (tall ? 1.1 + i * 0.35 : 0.7), z + (r() - 0.5) * rad); this.put(m, s * 2, stage); }
+    this.blob(rad * 3, rad * 3, x, z, stage);
+  };
+  Kit.prototype.sofa = function (cx, cz, w, facing, fabric, legs, stage) {
+    var d = 0.92, bz = cz - facing * (d / 2 - 0.12);
+    this.box(w, 0.36, d, fabric, cx, 0.1, cz, stage, { r: 0.05 });
+    this.box(w, 0.5, 0.24, fabric, cx, 0.36, bz, stage, { r: 0.08 });
+    this.box(0.2, 0.3, d, fabric, cx - w / 2 + 0.1, 0.36, cz, stage, { r: 0.07 }); this.box(0.2, 0.3, d, fabric, cx + w / 2 - 0.1, 0.36, cz, stage, { r: 0.07 });
+    var cw = (w - 0.4) / 2; this.box(cw - 0.02, 0.13, d - 0.3, fabric, cx - cw / 2, 0.46, cz + facing * 0.08, stage, { r: 0.05 }); this.box(cw - 0.02, 0.13, d - 0.3, fabric, cx + cw / 2, 0.46, cz + facing * 0.08, stage, { r: 0.05 });
+    var self = this; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (p) { self.cyl(0.02, 0.016, 0.1, legs, cx + p[0] * (w / 2 - 0.1), 0, cz + p[1] * (d / 2 - 0.1), stage, { ns: 1, seg: 10 }); });
+    this.blob(w + 0.4, d + 0.4, cx, cz, stage);
+  };
+  Kit.prototype.table = function (cx, cz, w, d, h, top, legs, stage) {
+    this.box(w, 0.04, d, top, cx, h - 0.04, cz, stage, { r: 0.012 });
+    var self = this; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (p) { self.box(0.045, h - 0.04, 0.045, legs, cx + p[0] * (w / 2 - 0.08), 0, cz + p[1] * (d / 2 - 0.08), stage, { ns: 1, r: 0.01 }); });
+    this.blob(w + 0.3, d + 0.3, cx, cz, stage);
+  };
+  Kit.prototype.chair = function (cx, cz, facing, seat, legs, stage) {
+    this.box(0.44, 0.05, 0.44, seat, cx, 0.43, cz, stage, { r: 0.015 });
+    this.box(0.44, 0.38, 0.04, seat, cx, 0.48, cz - facing * 0.2, stage, { r: 0.015 });
+    var self = this; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (p) { self.box(0.03, 0.43, 0.03, legs, cx + p[0] * 0.19, 0, cz + p[1] * 0.19, stage, { ns: 1 }); });
+  };
+  Kit.prototype.stool = function (cx, cz, seat, legs, stage) {
+    var M = this.M; this.cyl(0.18, 0.17, 0.05, seat, cx, 0.68, cz, stage);
+    var self = this; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (p) { self.cyl(0.012, 0.012, 0.68, legs, cx + p[0] * 0.11, 0, cz + p[1] * 0.11, stage, { ns: 1, seg: 8 }); });
+    var ring = new T.Mesh(geo("tor", function () { return new T.TorusGeometry(0.155, 0.009, 8, 32); }), legs); ring.rotation.x = Math.PI / 2; ring.position.set(cx, 0.28, cz); this.put(ring, 0.02, stage, { ns: 1 });
+  };
+  Kit.prototype.pendant = function (cx, cz, yTop, drop, type, mat, stage) {
+    var M = this.M; this.cyl(0.004, 0.004, drop, M.blackMetal, cx, yTop - drop, cz, stage, { ns: 1, seg: 6 });
+    if (type === "globe") { this.sphere(0.14, M.lamp, cx, yTop - drop - 0.12, cz, stage, { ns: 1 }); this.cyl(0.04, 0.04, 0.03, mat, cx, yTop - drop - 0.01, cz, stage, { ns: 1 }); }
+    else if (type === "dome") { var m = new T.Mesh(lathe("dome", [[0.01, 0.22], [0.06, 0.21], [0.16, 0.12], [0.2, 0.0], [0.19, 0.0], [0.15, 0.11], [0.01, 0.2]], 32), mat); m.position.set(cx, yTop - drop - 0.22, cz); this.put(m, 0.22, stage, { ns: 1 }); this.sphere(0.06, M.lamp, cx, yTop - drop - 0.17, cz, stage, { ns: 1 }); }
+    else { this.cyl(0.17, 0.17, 0.2, mat, cx, yTop - drop - 0.2, cz, stage, { ns: 1 }); this.cyl(0.15, 0.15, 0.01, M.lamp, cx, yTop - drop - 0.205, cz, stage, { ns: 1 }); }
   };
   Kit.prototype.mass = function (cx, cz, W, D, H, rise, alongX, o) {
     this.box(W, H, D, this.M.massing, cx, 0, cz, -1, o);
-    this.gable(alongX ? D + 0.6 : W + 0.6, alongX ? W + 0.6 : D + 0.6, rise, this.M.massRoof, cx, H, cz, -1, alongX, o);
+    this.gable(alongX ? D + 0.8 : W + 0.8, alongX ? W + 0.8 : D + 0.8, rise, this.M.massRoof, cx, H, cz, -1, alongX, o);
   };
 
-  /* ---------------- One builder per project ---------------- */
+  /* ---------------- Interiors ---------------- */
   var B = {};
   B.bathroom = function (k, s, f) {
-    var M = k.M, dm = { S: [2.0, 1.7], M: [2.8, 2.2], L: [3.6, 2.8] }[s.size], w = dm[0], d = dm[1], H = 2.6;
-    var tap = f === 2 ? M.brass : M.chrome, cab = [M.cabWhite, M.cabTimber, M.cabDark][f], top = f === 2 ? M.stoneDark : M.stoneLight;
-    var wallTile = f === 2 ? M.tileStone : M.tileLight, th = f === 0 ? 1.2 : H - 0.02;
+    var M = k.M, A = s.area || 6, w = Math.sqrt(A * 1.3), d = A / w, H = 2.6;   // room grows with the m² slider
+    var P = [
+      { wall: M.tileSubway, floor: M.tileFloor, vanity: M.cabWhite, top: M.stoneWhite, tap: M.chrome, paint: M.plaster, ring: null },
+      { wall: M.tileTrav, floor: M.tileTrav, vanity: M.oak, top: M.stoneWhite, tap: M.nickel, paint: M.plasterWarm, ring: M.oak, feature: M.tileSage },
+      { wall: M.marble, floor: M.tileStoneDark, vanity: M.walnut, top: M.marble, tap: M.brass, paint: M.plasterWarm, ring: M.brass, feature: M.marble }
+    ][f];
     k.box(w + 0.5, 0.25, d + 0.5, M.slab, w / 2, -0.25, d / 2, 0);
-    k.box(w, 0.04, d, f === 2 ? M.tileStone : M.floorTile, w / 2, 0, d / 2, 0);
-    k.box(w + 0.12, H, 0.12, M.plaster, w / 2 - 0.06, 0, -0.06, 1);
-    k.box(0.12, H, d, M.plaster, -0.06, 0, d / 2, 1);
-    k.box(w, th, 0.02, wallTile, w / 2, 0.04, 0.01, 2, { ns: 1 });
-    k.box(0.02, th, d, wallTile, 0.01, 0.04, d / 2, 2, { ns: 1 });
-    if (f === 2) k.box(0.6, 0.32, 0.03, M.gap, 0.48, 1.1, 0.03, 3, { ns: 1 });
-    // shower
-    k.box(0.012, 2.0, 0.95, M.glass, 0.95, 0.04, 0.5, 4, { ns: 1 });
-    k.box(0.03, 2.0, 0.03, tap, 0.95, 0.04, 0.96, 4, { ns: 1 });
-    k.cyl(0.11, 0.11, 0.015, tap, 0.45, 2.05, 0.34, 4, { ns: 1 }); k.box(0.02, 0.02, 0.3, tap, 0.45, 2.07, 0.17, 4, { ns: 1 });
-    k.box(0.6, 0.006, 0.06, tap, 0.45, 0.04, 0.82, 4, { ns: 1 });
-    // vanity
-    var vw = { S: 0.6, M: 0.9, L: 1.2 }[s.size], vx = w - vw / 2 - 0.08;
-    k.box(vw, 0.48, 0.46, cab, vx, 0.36, 0.25, 3);
-    k.box(vw + 0.02, 0.04, 0.48, top, vx, 0.84, 0.25, 3);
-    k.cyl(0.2, 0.16, 0.13, M.porcelain, vx, 0.88, 0.27, 4);
-    k.cyl(0.013, 0.013, 0.26, tap, vx, 0.88, 0.07, 5, { ns: 1 }); k.box(0.022, 0.022, 0.14, tap, vx, 1.12, 0.13, 5, { ns: 1 });
-    k.box(Math.min(vw * 0.85, 0.9), 0.8, 0.02, M.mirror, vx, 1.22, 0.035, 4, { ns: 1 });
+    k.box(w, 0.03, d, P.floor, w / 2, 0, d / 2, 0, { ns: 1 });
+    k.box(w + 0.12, H, 0.12, P.paint, w / 2 - 0.06, 0, -0.06, 1);
+    k.box(0.12, H, d, P.paint, -0.06, 0, d / 2, 1);
+    var th = f === 0 ? 1.25 : H - 0.03;
+    k.box(w, th, 0.016, P.wall, w / 2, 0.03, 0.008, 2, { ns: 1 });
+    k.box(0.016, th, d, P.wall, 0.008, 0.03, d / 2, 2, { ns: 1 });
+    if (f === 0) { k.box(w, 0.025, 0.03, M.chrome, w / 2, 0.03 + th, 0.015, 2, { ns: 1 }); k.box(0.03, 0.025, d, M.chrome, 0.015, 0.03 + th, d / 2, 2, { ns: 1 }); }
+    if (P.feature) k.box(1.0, H - 0.03, 0.02, P.feature, 0.5, 0.03, 0.026, 2, { ns: 1 });
+    // shower: frameless screen, rain head, wall mixer, niche, linear drain
+    k.box(0.012, 2.0, 1.0, M.glass, 1.0, 0.03, 0.5, 4, { ns: 1 });
+    k.box(0.02, 0.02, 1.0, P.tap, 1.0, 2.01, 0.5, 4, { ns: 1 });
+    k.cyl(0.13, 0.13, 0.012, P.tap, 0.5, 2.15, 0.42, 4, { ns: 1 }); k.box(0.02, 0.02, 0.42, P.tap, 0.5, 2.17, 0.21, 4, { ns: 1 });
+    k.box(0.1, 0.1, 0.02, P.tap, 0.5, 1.05, 0.045, 4, { ns: 1, r: 0.008 });
+    if (f >= 1) { k.box(0.6, 0.3, 0.02, M.niche, 0.5, 1.3, 0.034, 4, { ns: 1 }); k.box(0.6, 0.02, 0.05, P.top, 0.5, 1.3, 0.05, 4, { ns: 1 }); }
+    k.box(0.8, 0.006, 0.06, P.tap, 0.5, 0.03, 0.88, 4, { ns: 1 });
+    // wall-hung vanity with stone top, vessel basin(s), wall spout, mirror and sconces
+    var vw = A < 5 ? 0.75 : A < 8 ? 1.0 : A < 12 ? 1.4 : 1.8, vx = w - vw / 2 - 0.1;
+    k.box(vw, 0.42, 0.47, P.vanity, vx, 0.42, 0.26, 4, { r: 0.012 });
+    if (vw > 0.8) k.box(0.005, 0.38, 0.005, M.inside, vx, 0.44, 0.497, 5, { ns: 1 });
+    k.box(vw + 0.02, 0.03, 0.49, P.top, vx, 0.84, 0.26, 4);
+    k.blob(vw + 0.2, 0.6, vx, 0.3, 4);
+    var basins = A >= 8 ? [vx - vw / 4, vx + vw / 4] : [vx];
+    basins.forEach(function (bx) {
+      var b = new T.Mesh(lathe("basin", [[0, 0], [0.11, 0], [0.18, 0.035], [0.2, 0.11], [0.195, 0.12], [0.18, 0.06], [0.12, 0.024], [0, 0.024]]), M.porcelain);
+      b.position.set(bx, 0.87, 0.27); k.put(b, 0.12, 5, { base: true });
+      k.box(0.022, 0.022, 0.15, P.tap, bx, 1.06, 0.1, 5, { ns: 1 }); k.box(0.1, 0.06, 0.01, P.tap, bx, 1.04, 0.022, 5, { ns: 1, r: 0.004 });
+    });
+    if (P.ring) {
+      var mr = Math.min(0.42, (basins.length > 1 ? vw / 2 : vw) * 0.38);
+      basins.forEach(function (bx) {
+        var fr = k.cyl(mr + 0.025, mr + 0.025, 0.02, P.ring, bx, 1.55 - 0.01, 0.03, 5, { ns: 1, seg: 48 }); fr.rotation.x = Math.PI / 2; fr.position.y = 1.55; fr.userData.ty = 1.55;
+        var mi = k.cyl(mr, mr, 0.02, M.mirror, bx, 1.55 - 0.01, 0.042, 5, { ns: 1, seg: 48 }); mi.rotation.x = Math.PI / 2; mi.position.y = 1.55; mi.userData.ty = 1.55;
+      });
+      [vx - vw / 2 - 0.12, vx + vw / 2 + 0.06].forEach(function (sx) { if (sx > 1.1 && sx < w - 0.05) { k.cyl(0.045, 0.045, 0.2, M.lamp, sx, 1.5, 0.07, 5, { ns: 1 }); k.box(0.07, 0.24, 0.02, P.tap, sx, 1.48, 0.02, 5, { ns: 1 }); } });
+    } else k.box(Math.min(vw, 0.9), 0.8, 0.02, M.mirror, vx, 1.15, 0.035, 5, { ns: 1 });
     // wall-hung toilet on the left wall
-    var zt = s.layout ? d - 0.42 : Math.min(d - 0.42, 1.35);
-    k.box(0.55, 0.36, 0.38, M.porcelain, 0.3, 0.34, zt, 4);
-    k.box(0.02, 0.14, 0.24, tap, 0.03, 1.0, zt, 5, { ns: 1 });
-    // freestanding bath
-    if (s.size === "L" || (s.size === "M" && f === 2)) {
-      var bw = Math.min(1.65, w - 1.3), bx = 1.15 + bw / 2, bz = d - 0.55;
-      k.box(bw, 0.56, 0.76, M.porcelain, bx, 0.04, bz, 4);
-      k.box(bw - 0.16, 0.012, 0.6, M.water, bx, 0.592, bz, 5, { ns: 1 });
-      k.cyl(0.018, 0.018, 0.95, tap, bx - bw / 2 - 0.16, 0.04, bz, 5, { ns: 1 });
+    var zt = Math.min(d - 0.42, 1.4);
+    var pan = new T.Mesh(lathe("pan", [[0, 0], [0.12, 0], [0.165, 0.08], [0.18, 0.2], [0.18, 0.3], [0.17, 0.31], [0, 0.31]], 32), M.porcelain);
+    pan.scale.set(1.45, 1, 1); pan.position.set(0.3, 0.12, zt); k.put(pan, 0.31, 4, { base: true });
+    var seat = k.cyl(0.18, 0.18, 0.03, M.porcelain, 0.3, 0.43, zt, 4, { seg: 32 }); seat.scale.x = 1.45;
+    k.box(0.012, 0.13, 0.22, P.tap, 0.02, 0.98, zt, 5, { ns: 1, r: 0.004 });
+    k.blob(0.7, 0.55, 0.3, zt, 4);
+    // freestanding oval bath (lathe profile scaled into an oval)
+    var bathEnd = 0;
+    if (A >= 8 || (A >= 6 && f === 2)) {
+      var bw = Math.min(1.7, w - 1.4), bx = 1.2 + bw / 2, bz = d - 0.55;
+      var tub = new T.Mesh(lathe("tub", [[0, 0], [0.84, 0], [0.95, 0.12], [1.0, 0.9], [1.0, 1.0], [0.94, 1.0], [0.91, 0.55], [0.82, 0.22], [0, 0.2]], 56), M.porcelain);
+      tub.scale.set(bw / 2, 0.58, 0.39); tub.position.set(bx, 0.03, bz); k.put(tub, 0.58, 5, { base: true });
+      k.cyl(0.018, 0.018, 0.95, P.tap, bx - bw / 2 - 0.16, 0.03, bz, 5, { ns: 1, seg: 12 }); k.box(0.022, 0.022, 0.16, P.tap, bx - bw / 2 - 0.16, 0.96, bz + 0.07, 5, { ns: 1 });
+      k.blob(bw + 0.4, 1.1, bx, bz, 5); bathEnd = 1.2 + bw;
     }
-    if (f >= 1) { k.box(0.5, 0.025, 0.025, tap, w - 0.35, 1.1, d - 0.02, 5, { ns: 1 }); }
+    // heated towel rail with towel, plants and bath mat on the warmer finishes
+    var span = w - vw - 0.1 - 1.0;
+    if (span >= 0.55) { var tx = 1.0 + span / 2; [0.85, 1.15].forEach(function (yy) { k.rod(0.5, 0.012, P.tap, tx, yy, 0.06, "x", 5); }); k.box(0.32, 0.5, 0.035, f === 0 ? M.linenWhite : M.linenOat, tx, 0.68, 0.09, 5, { r: 0.012 }); }
+    if (f >= 1) {
+      k.box(0.75, 0.012, 0.48, M.rug, vx, 0.03, 0.82, 5, { ns: 1, r: 0.006 });
+      if (w - bathEnd > 0.55 && d > 2.1) k.pot(w - 0.28, d - 0.3, 0.17, 0.4, f === 2 ? M.potCharcoal : M.potStone, 6, true);
+    }
   };
 
   B.kitchen = function (k, s, f) {
-    var M = k.M, dm = { S: [3.2, 2.8], M: [4.2, 3.4], L: [5.2, 4.2] }[s.size], w = dm[0], d = dm[1], H = 2.7;
-    var cab = [M.cabWhite, M.cabTimber, M.cabDark][f], top = f === 2 ? M.stoneDark : M.stoneLight, tt = f === 2 ? 0.06 : 0.04;
-    var tap = f === 2 ? M.brass : M.chrome, ds = [0.9, 0.6, 0.45][f];
+    var M = k.M, A = s.area || 12, w = Math.sqrt(A * 1.22), d = A / w, H = 2.7;   // room grows with the m² slider
+    var P = [
+      { base: M.cabWhite, upper: M.cabWhite, island: M.cabWhite, top: M.stoneWhite, splash: M.tileSubway, floor: M.tileFloor, handle: M.chrome, wall: M.plaster, tt: 0.03, pend: "dome", pendMat: M.cabWhite },
+      { base: M.cabSage, upper: M.oak, island: M.oak, top: M.stoneWhite, splash: M.tileSubway, floor: M.floorOak, handle: M.nickel, wall: M.plasterWarm, tt: 0.04, pend: "drum", pendMat: M.linenOat },
+      { base: M.cabCharcoal, upper: M.cabCharcoal, island: M.walnut, top: M.marble, splash: M.marble, floor: M.floorWalnut, handle: M.brass, wall: M.plasterWarm, tt: 0.06, pend: "globe", pendMat: M.brass }
+    ][f];
+    var tt = P.tt, ty = 0.89 + tt;
     k.box(w + 0.5, 0.25, d + 0.5, M.slab, w / 2, -0.25, d / 2, 0);
-    k.box(w, 0.03, d, f === 0 ? M.floorTile : (f === 1 ? M.floorTimber : M.floorDark), w / 2, 0, d / 2, 0);
-    k.box(w + 0.12, H, 0.12, M.plaster, w / 2 - 0.06, 0, -0.06, 1);
-    k.box(0.12, H, d, M.plaster, -0.06, 0, d / 2, 1);
-    // tall fridge / pantry: left end on a galley, right end when there's an L-shaped run
-    var galley = s.size === "S", fx = galley ? 0.45 : w - 0.45;
-    k.box(0.9, 2.1, 0.62, f === 0 ? M.steel : cab, fx, 0.03, 0.31, 2);
-    if (f > 0) k.box(0.006, 2.0, 0.006, M.gap, fx, 0.07, 0.625, 4, { ns: 1 });
-    // back run
-    var x0 = galley ? 0.92 : 0, bw = galley ? w - 0.92 : w - 0.92, bc = x0 + bw / 2, xe = x0 + bw;
-    k.box(bw, 0.1, 0.5, M.gap, bc, 0.03, 0.25, 2, { ns: 1 });
-    k.box(bw, 0.76, 0.58, cab, bc, 0.13, 0.29, 2);
-    k.box(bw + 0.02, tt, 0.62, top, bc, 0.89, 0.31, 3);
-    for (var gx = x0 + ds, n = 0; gx < xe - 0.05 && n < 14; gx += ds, n++) k.box(0.006, 0.72, 0.006, M.gap, gx, 0.15, 0.583, 4, { ns: 1 });
-    // splashback, sink, cooktop, oven, rangehood, uppers
-    var ckx = x0 + bw * 0.66, skx = x0 + bw * 0.25, ty = 0.89 + tt;
-    k.box(bw, 0.6, 0.015, f === 2 ? M.stoneDark : M.tileLight, bc, ty, 0.008, 3, { ns: 1 });
-    k.box(0.6, 0.012, 0.42, M.gap, skx, ty - 0.008, 0.33, 4, { ns: 1 });
-    k.cyl(0.014, 0.014, 0.32, tap, skx, ty, 0.09, 5, { ns: 1 }); k.box(0.022, 0.022, 0.18, tap, skx, ty + 0.3, 0.17, 5, { ns: 1 });
-    k.box(0.62, 0.01, 0.5, M.blackGlass, ckx, ty, 0.32, 4, { ns: 1 });
-    k.box(0.6, 0.58, 0.012, M.blackGlass, ckx, 0.2, 0.586, 4, { ns: 1 });
-    k.box(0.75, f === 2 ? 0.5 : 0.25, 0.42, M.steel, ckx, f === 2 ? 1.95 : 1.62, 0.21, 4);
-    if (f < 2) {
-      var u1 = ckx - 0.45 - x0, u2 = xe - (ckx + 0.45);
-      if (u1 > 0.4) k.box(u1, 0.72, 0.35, cab, x0 + u1 / 2, 1.55, 0.175, 3);
-      if (u2 > 0.4) k.box(u2, 0.72, 0.35, cab, xe - u2 / 2, 1.55, 0.175, 3);
-    } else {
-      k.box(bw * 0.3, 0.04, 0.28, M.cabTimber, skx, 1.7, 0.14, 4); k.box(bw * 0.3, 0.04, 0.28, M.cabTimber, skx, 2.05, 0.14, 4);
-    }
-    // second run: galley front run, or an L along the left wall
-    if (s.size === "S") {
-      var gl = w * 0.62, gcx = w - gl / 2 - 0.1;
-      k.box(gl, 0.76, 0.58, cab, gcx, 0.13, d - 0.29, 2); k.box(gl + 0.02, tt, 0.62, top, gcx, 0.89, d - 0.31, 3);
-    } else {
-      var run = Math.min(d - 1.5, 2.2), rz = 0.62 + run / 2;
-      k.box(0.58, 0.76, run, cab, 0.29, 0.13, rz, 2); k.box(0.62, tt, run, top, 0.31, 0.89, rz, 3);
-    }
-    // island with stools and pendants
-    if (s.size === "L") {
-      var ix = w / 2 + 0.35, iz = d - 1.35;
-      k.box(2.4, 0.76, 0.95, cab, ix, 0.13, iz, 2); k.box(2.5, tt, 1.05, top, ix, 0.89, iz, 3);
-      if (f === 2) { k.box(0.06, 0.89, 1.05, top, ix - 1.22, 0.0, iz, 3); k.box(0.06, 0.89, 1.05, top, ix + 1.22, 0.0, iz, 3); }
-      if (f >= 1) for (var i = 0; i < 3; i++) {
-        var sx = ix - 0.75 + i * 0.75;
-        k.cyl(0.02, 0.02, 0.62, M.frameBlack, sx, 0.03, iz + 0.75, 5, { ns: 1 }); k.cyl(0.18, 0.18, 0.05, f === 2 ? M.fabric : M.cabTimber, sx, 0.65, iz + 0.75, 5);
-        k.cyl(0.004, 0.004, H - 1.95, M.frameBlack, sx, 1.95, iz, 5, { ns: 1 }); k.cyl(0.07, 0.15, 0.2, f === 2 ? M.brass : M.lamp, sx, 1.75, iz, 5, { ns: 1 });
+    k.box(w, 0.025, d, P.floor, w / 2, 0, d / 2, 0, { ns: 1 });
+    k.box(w + 0.12, H, 0.12, P.wall, w / 2 - 0.06, 0, -0.06, 1);
+    k.box(0.12, H, d, P.wall, -0.06, 0, d / 2, 1);
+    function run(x0, x1, z0, depthAxis) { // base cabinets along the back wall (depthAxis "z") or left wall ("x")
+      var L = x1 - x0, c = (x0 + x1) / 2, ds = f === 0 ? 0.6 : 0.45, n = Math.max(1, Math.round(L / ds));
+      if (depthAxis === "z") {
+        k.box(L, 0.1, 0.5, M.inside, c, 0.025, z0 + 0.25, 2, { ns: 1 });
+        k.box(L, 0.76, 0.58, P.base, c, 0.125, z0 + 0.29, 2, { r: 0.006 });
+        for (var i = 1; i < n; i++) k.box(0.005, 0.72, 0.005, M.inside, x0 + L * i / n, 0.145, z0 + 0.582, 4, { ns: 1 });
+        if (f < 2) for (var j = 0; j < n; j++) k.box(0.16, 0.012, 0.02, P.handle, x0 + L * (j + 0.5) / n, 0.78, z0 + 0.6, 5, { ns: 1, r: 0.004 });
+        else k.box(L, 0.015, 0.01, M.inside, c, 0.83, z0 + 0.585, 5, { ns: 1 });
+        k.box(L + 0.02, tt, 0.62, P.top, c, 0.885, z0 + 0.31, 3);
+      } else {
+        k.box(0.5, 0.1, L, M.inside, 0.25, 0.025, c, 2, { ns: 1 });
+        k.box(0.58, 0.76, L, P.base, 0.29, 0.125, c, 2, { r: 0.006 });
+        for (var i2 = 1; i2 < n; i2++) k.box(0.005, 0.72, 0.005, M.inside, 0.582, 0.145, x0 + L * i2 / n, 4, { ns: 1 });
+        if (f < 2) for (var j2 = 0; j2 < n; j2++) k.box(0.02, 0.012, 0.16, P.handle, 0.6, 0.78, x0 + L * (j2 + 0.5) / n, 5, { ns: 1, r: 0.004 });
+        k.box(0.62, tt, L + 0.02, P.top, 0.31, 0.885, c, 3);
       }
     }
+    var galley = A < 9, fx = galley ? 0.46 : w - 0.46;
+    // integrated tall fridge and pantry
+    k.box(0.9, 2.15, 0.62, f === 0 ? M.steel : P.upper, fx, 0.025, 0.31, 2, { r: 0.008 });
+    k.box(0.005, 2.05, 0.005, M.inside, fx, 0.07, 0.622, 4, { ns: 1 });
+    k.box(0.015, 0.9, 0.025, P.handle, fx - 0.06, 0.7, 0.64, 5, { ns: 1, r: 0.004 }); k.box(0.015, 0.9, 0.025, P.handle, fx + 0.06, 0.7, 0.64, 5, { ns: 1, r: 0.004 });
+    var x0 = galley ? 0.92 : 0, xe = galley ? w : w - 0.92, bw = xe - x0;
+    run(x0, xe, 0, "z");
+    var skx = x0 + bw * 0.3, ckx = x0 + bw * 0.72;
+    // splashback, window over the sink, sink and tap, cooktop, oven, rangehood
+    k.box(bw, 0.6, 0.014, P.splash, x0 + bw / 2, ty, 0.007, 3, { ns: 1 });
+    k.win("z", skx, ty + 0.66, 0.014, 1.3, 0.75, { frame: f === 2 ? M.frameBlack : M.frameSilver, trim: M.stoneWhite }, 4, { view: true, noSill: true });
+    k.box(0.72, 0.012, 0.42, M.inside, skx, ty - 0.008, 0.33, 4, { ns: 1 });
+    k.cyl(0.015, 0.015, 0.36, P.handle, skx, ty, 0.1, 5, { ns: 1, seg: 12 }); k.box(0.024, 0.024, 0.2, P.handle, skx, ty + 0.34, 0.19, 5, { ns: 1, r: 0.008 });
+    k.box(0.62, 0.008, 0.5, M.blackGlass, ckx, ty, 0.32, 4, { ns: 1 });
+    k.box(0.6, 0.56, 0.012, M.blackGlass, ckx, 0.2, 0.588, 4, { ns: 1 }); k.box(0.5, 0.014, 0.025, P.handle, ckx, 0.7, 0.6, 5, { ns: 1, r: 0.005 });
+    if (f === 0) k.box(0.76, 0.3, 0.46, M.steel, ckx, 1.6, 0.23, 4, { r: 0.01 });
+    if (f < 2) { var u2 = xe - (ckx - 0.4); k.box(u2, 0.75, 0.36, P.upper, xe - u2 / 2, 1.62, 0.18, 3, { r: 0.006 });
+      for (var g = 1; g < Math.round(u2 / 0.45); g++) k.box(0.005, 0.7, 0.005, M.inside, xe - u2 + u2 * g / Math.round(u2 / 0.45), 1.645, 0.362, 5, { ns: 1 }); }
+    else { [1.62, 1.98].forEach(function (yy) { k.box(xe - ckx + 0.1, 0.045, 0.28, M.walnut, (ckx + xe) / 2 + 0.05, yy, 0.14, 4); });
+      var bowl = new T.Mesh(lathe("bowl", [[0, 0], [0.06, 0], [0.12, 0.05], [0.13, 0.07], [0.12, 0.07], [0.1, 0.03], [0, 0.015]]), M.stoneWhite); bowl.position.set(ckx + 0.3, 1.665, 0.14); k.put(bowl, 0.07, 6, { base: true });
+      k.cyl(0.05, 0.06, 0.22, M.potCharcoal, ckx + 0.75, 1.665, 0.14, 6); k.box(0.25, 0.2, 0.18, M.oak, ckx + 0.55, 2.025, 0.14, 6, { r: 0.01 }); }
+    if (galley) run(0.6, w, d - 0.62, "z");
+    else run(0.62, 0.62 + Math.min(d - 1.6, 2.2), 0, "x");
+    // island with waterfall ends, stools and pendants
+    if (A >= 18 || (A >= 14 && f >= 1)) {
+      var iw = A >= 20 ? Math.min(3.4, w * 0.48) : 1.9, ix = w / 2 + 0.35, iz = d - 1.45;
+      k.box(iw, 0.76, 0.9, P.island, ix, 0.125, iz - 0.05, 2, { r: 0.008 }); k.box(iw - 0.04, 0.1, 0.85, M.inside, ix, 0.025, iz - 0.05, 2, { ns: 1 });
+      k.box(iw + 0.1, tt, 1.15, P.top, ix, 0.885, iz + 0.05, 3);
+      if (f >= 1) { k.box(tt, 0.885, 1.15, P.top, ix - iw / 2 - 0.05 + tt / 2, 0, iz + 0.05, 3); k.box(tt, 0.885, 1.15, P.top, ix + iw / 2 + 0.05 - tt / 2, 0, iz + 0.05, 3); }
+      k.blob(iw + 0.6, 1.6, ix, iz, 3);
+      var ns = Math.max(2, Math.round(iw / 0.8));
+      for (var i = 0; i < ns; i++) { var sx = ix - iw / 2 + iw * (i + 0.5) / ns; k.stool(sx, iz + 0.78, f === 2 ? M.linenOat : M.oak, M.blackMetal, 5); k.pendant(sx, iz, H, 0.95, P.pend, P.pendMat, 5); }
+      var vase = new T.Mesh(lathe("vase", [[0, 0], [0.07, 0], [0.09, 0.08], [0.06, 0.2], [0.04, 0.26], [0.045, 0.28], [0, 0.28]]), f === 2 ? M.stoneWhite : M.potStone); vase.position.set(ix + iw / 2 - 0.4, ty, iz + 0.05); k.put(vase, 0.28, 6, { base: true });
+      k.shrub(ix + iw / 2 - 0.4, iz + 0.05, 0.5, 6); k.g.children.slice(-4).forEach(function (o) { if (o.geometry === ico()) { o.position.y += ty + 0.25; o.userData.ty = o.position.y; o.scale.multiplyScalar(0.6); o.userData.sy = o.scale.y; } });
+    }
+    if (f >= 1) k.pot(w - 0.3, d - 0.35, 0.2, 0.5, f === 2 ? M.potCharcoal : M.potStone, 6, true);
   };
 
-  function wallMat(M, f) { return [M.render, M.cladLight, M.cladDark][f]; }
-  function frameMat(M, f) { return f === 2 ? M.frameBlack : M.frameAlu; }
-
+  /* ---------------- Exteriors ---------------- */
   B.extension = function (k, s, f, A) {
-    var M = k.M, fr = frameMat(M, f);
+    var M = k.M, P = extPal(M, f);
     k.mass(5, 4, 10, 8, 2.7, 1.8, true);
-    var W = Math.min(10, Math.max(4, Math.sqrt(A * 1.6))), D = A / W, cx = 5, z0 = 8, cz = z0 + D / 2;
-    k.box(W + 0.2, 0.3, D + 0.1, M.slab, cx, 0, cz, 0);
-    k.box(W - 0.4, 0.02, D - 0.3, f === 0 ? M.floorTile : M.floorTimber, cx, 0.3, cz - 0.1, 1, { ns: 1 });
-    var wm = wallMat(M, f);
-    k.box(0.22, 2.7, D, wm, cx - W / 2 + 0.11, 0.3, cz, 1); k.box(0.22, 2.7, D, wm, cx + W / 2 - 0.11, 0.3, cz, 1);
-    k.box(W, 0.4, 0.22, wm, cx, 2.6, z0 + D - 0.11, 2);
-    k.box(W + 0.5, 0.28, D + 0.45, f === 2 ? M.frameBlack : M.renderLight, cx, 3.0, cz + 0.12, 3);
-    if (f === 2) k.box(1.4, 0.06, 0.9, M.glass, cx - W / 4, 3.28, cz - 0.3, 4, { ns: 1 });
-    // full-width glass sliders
-    var gw = W - 0.44, n = Math.max(2, Math.round(gw / 1.25)), pw = gw / n, zf = z0 + D - 0.12;
-    for (var i = 0; i < n; i++) {
-      var u = cx - gw / 2 + pw * (i + 0.5);
-      k.box(pw - 0.05, 2.25, 0.03, M.glass, u, 0.33, zf, 4, { ns: 1 });
-      k.box(0.05, 2.3, 0.07, fr, u - pw / 2, 0.3, zf, 4, { ns: 1 });
-    }
-    k.box(0.05, 2.3, 0.07, fr, cx + gw / 2, 0.3, zf, 4, { ns: 1 });
-    k.box(gw, 0.05, 0.07, fr, cx, 0.3, zf, 4, { ns: 1 }); k.box(gw, 0.05, 0.07, fr, cx, 2.55, zf, 4, { ns: 1 });
-    k.win("x", cz - 0.3, 1.0, cx + W / 2, Math.min(2.0, D - 1), 1.3, fr, 4);
-    k.box(W + 0.6, 0.05, 1.4, M.pavers, cx, 0, z0 + D + 0.75, 5);
-    if (f >= 1) {
-      k.box(1.8, 0.04, 0.9, M.cabTimber, cx, 1.04, cz, 5);
-      [[-0.82, -0.38], [0.82, -0.38], [-0.82, 0.38], [0.82, 0.38]].forEach(function (p) { k.box(0.05, 0.72, 0.05, M.frameBlack, cx + p[0], 0.32, cz + p[1], 5, { ns: 1 }); });
-      k.cyl(0.004, 0.004, 1.1, M.frameBlack, cx, 1.9, cz, 5, { ns: 1 }); k.cyl(0.08, 0.2, 0.22, f === 2 ? M.brass : M.lamp, cx, 1.7, cz, 5, { ns: 1 });
-    }
+    var W = Math.min(10, Math.max(4, Math.sqrt(A * 1.6))), D = A / W, cx = 5, z0 = 8, cz = z0 + D / 2, fz = z0 + D;
+    k.box(W + 0.24, 0.3, D + 0.12, M.plinth, cx, 0, cz, 0);
+    k.box(W - 0.44, 0.02, D - 0.3, f === 0 ? M.tileFloor : M.floorOak, cx, 0.3, cz - 0.1, 1, { ns: 1 });
+    k.box(0.22, 2.75, D, P.wall, cx - W / 2 + 0.11, 0.3, cz, 1); k.box(0.22, 2.75, D, P.wall, cx + W / 2 - 0.11, 0.3, cz, 1);
+    k.box(W, 0.45, 0.22, P.wall, cx, 2.6, fz - 0.11, 1);
+    if (f >= 1) k.clad("x", z0 + 0.2, fz - 0.15, 0.32, 3.0, cx + W / 2, P.feat, P.featType, 2);
+    k.flatRoof(cx, cz + 0.25, W, D, 3.05, f === 0 ? 0.25 : 0.45, P, 3);
+    if (f === 2) k.box(1.4, 0.08, 0.9, M.glass, cx - W / 4, 3.42, cz - 0.3, 4, { ns: 1 });
+    // full-width stacking doors
+    var gw = W - 0.44, n = Math.max(2, Math.round(gw / 1.3)), pw = gw / n, zf = fz - 0.13;
+    for (var i = 0; i < n; i++) { var u = cx - gw / 2 + pw * (i + 0.5); k.box(pw - 0.06, 2.25, 0.03, M.glass, u, 0.34, zf, 4, { ns: 1 }); k.box(0.06, 2.3, 0.08, P.frame, u - pw / 2, 0.3, zf, 4, { ns: 1 }); }
+    k.box(0.06, 2.3, 0.08, P.frame, cx + gw / 2, 0.3, zf, 4, { ns: 1 }); k.box(gw, 0.06, 0.08, P.frame, cx, 0.3, zf, 4, { ns: 1 }); k.box(gw, 0.06, 0.08, P.frame, cx, 2.55, zf, 4, { ns: 1 });
+    k.win("x", cz - 0.4, 1.0, cx + W / 2 + (f >= 1 ? 0.045 : 0), Math.min(1.8, D - 1.2), 1.3, P, 4);
+    // a glimpse inside: sofa, rug and pendant
+    k.box(Math.min(2.6, W - 1.4), 0.012, 1.8, M.rug, cx, 0.32, cz - 0.2, 5, { ns: 1, r: 0.006 });
+    k.sofa(cx, cz - 0.95, Math.min(2.3, W - 1.6), 1, f === 2 ? M.fabricCharcoal : M.linenOat, M.blackMetal, 5); k.g.children.slice(-12).forEach(function (o) { o.position.y += 0.3; o.userData.ty = o.position.y; });
+    k.pendant(cx, cz - 0.1, 3.05, 1.0, f === 0 ? "dome" : "globe", f === 2 ? M.brass : M.cabWhite, 5);
+    // terrace, outdoor setting, planting
+    k.box(W + 1.2, 0.05, 2.6, P.pav, cx, 0, fz + 1.35, 6);
+    k.table(cx + W / 4, fz + 1.4, 1.4, 0.85, 0.74, f === 0 ? M.pine : M.spottedGum, M.blackMetal, 6);
+    k.chair(cx + W / 4 - 0.45, fz + 2.05, -1, f === 2 ? M.charBatten : M.oak, M.blackMetal, 6); k.chair(cx + W / 4 + 0.45, fz + 2.05, -1, f === 2 ? M.charBatten : M.oak, M.blackMetal, 6);
+    k.bed(cx - W / 2 - 0.1, fz + 1.35, 1.6, 0.6, P, 6);
+    k.tree(cx + W / 2 + 1.7, z0 + 1.2, 4.2, 6);
+    k.shrub(cx - W / 2 - 0.6, z0 + 1.0, 1.0, 6);
   };
 
   B.storey = function (k, s, f, A) {
-    var M = k.M, fr = frameMat(M, f);
+    var M = k.M, P = extPal(M, f);
     k.box(12, 2.8, 9, M.massing, 6, 0, 4.5, -1);
-    var W = Math.min(12, Math.sqrt(A * 1.33)), D = Math.min(9, A / W), cx = 6, cz = 4.5, wm = wallMat(M, f);
-    k.box(W + 0.1, 0.25, D + 0.1, M.slab, cx, 2.8, cz, 0);
-    k.box(W, 2.6, D, wm, cx, 3.05, cz, 1);
-    k.box(W + 0.7, 0.14, 0.14, f === 2 ? M.frameBlack : M.frameAlu, cx, 5.56, cz + D / 2 + 0.3, 3, { ns: 1 });
-    k.gable(D + 0.7, W + 0.7, 1.6, f === 2 ? M.roofMetal : M.roofTile, cx, 5.65, cz, 3, true);
-    var nw = Math.max(1, Math.floor(W / 3)), gp = W / nw;
-    for (var i = 0; i < nw; i++) k.win("z", cx - W / 2 + gp * (i + 0.5), 3.6, cz + D / 2, f === 2 ? 1.9 : 1.5, 1.45, fr, 4);
-    k.win("x", cz, 3.6, cx + W / 2, Math.min(2.4, D - 1.2), 1.4, fr, 4);
+    var W = Math.min(12, Math.sqrt(A * 1.33)), D = Math.min(9, A / W), cx = 6, cz = 4.5, fz = cz + D / 2;
+    k.box(W + 0.1, 0.28, D + 0.1, M.plinth, cx, 2.8, cz, 0);
+    k.box(W, 2.65, D, P.wall, cx, 3.08, cz, 1);
+    if (f >= 1) { var fw = Math.min(3.2, W * 0.35); k.clad("z", cx + W / 2 - fw, cx + W / 2 - 0.02, 3.1, 5.7, fz, P.feat, P.featType, 2); }
+    else k.clad("x", cz - D / 2 + 0.1, cz + D / 2 - 0.1, 3.1, 5.7, cx + W / 2, P.feat, "board", 2);
+    k.roof(cx, cz, W, D, 5.73, 1.5, 0.5, P, 3, { downpipes: false });
+    k.cyl(0.045, 0.045, 5.8, P.trim, cx - W / 2 + 0.25, 0, fz + 0.62, 3, { ns: 1, seg: 12 });
+    var nw = Math.max(1, Math.floor((W - (f >= 1 ? 3.2 : 0)) / 2.8)), avail = W - (f >= 1 ? Math.min(3.2, W * 0.35) : 0);
+    for (var i = 0; i < nw; i++) k.win("z", cx - W / 2 + avail * (i + 0.5) / nw, 3.75, fz, f === 2 ? 1.9 : 1.6, 1.5, P, 4);
+    k.win("x", cz, 3.75, cx + W / 2 + (f === 0 ? 0.03 : 0), Math.min(2.2, D - 1.6), 1.45, P, 4);
+    if (f === 2) { // balcony with glass balustrade off the front
+      k.box(2.6, 0.18, 1.2, P.trim, cx - W / 2 + 1.5, 2.8, fz + 0.6, 4);
+      k.box(2.6, 0.95, 0.015, M.glass, cx - W / 2 + 1.5, 2.98, fz + 1.19, 5, { ns: 1 }); k.box(2.6, 0.04, 0.05, P.frame, cx - W / 2 + 1.5, 3.93, fz + 1.19, 5, { ns: 1 });
+    }
+    k.bed(cx - 2.5, 9.9, 3.2, 0.7, P, 6); k.bed(cx + 2.5, 9.9, 3.2, 0.7, P, 6);
+    k.tree(13.4, 7.5, 5.0, 6); k.shrub(-1.2, 8.4, 1.1, 6);
   };
 
   B.granny = function (k, s, f, A) {
-    var M = k.M, fr = frameMat(M, f);
+    var M = k.M, P = extPal(M, f);
     k.mass(5.5, 4.5, 11, 9, 2.7, 1.8, true);
-    var W = Math.sqrt(A * 1.5), D = A / W, x0 = 11 - W - 0.5, z0 = 13, cx = x0 + W / 2, cz = z0 + D / 2, wm = wallMat(M, f);
-    k.box(W + 0.3, 0.3, D + 0.3, M.slab, cx, 0, cz, 0);
-    k.box(W, 2.5, D, wm, cx, 0.3, cz, 1);
-    k.gable(D + 0.7, W + 0.7, 1.25, f === 2 ? M.roofMetal : M.roofTile, cx, 2.8, cz, 3, true);
-    k.door("z", cx - W / 2 + 1.2, 0.3, cz + D / 2, 0.9, 2.1, f === 0 ? M.gdoor : M.cabTimber, fr, 4);
-    k.win("z", cx + 0.4, 1.0, cz + D / 2, 1.6, 1.3, fr, 4);
-    if (W > 7) k.win("z", cx + W / 2 - 1.2, 1.0, cz + D / 2, 1.2, 1.3, fr, 4);
-    k.win("x", cz, 1.0, cx + W / 2, Math.min(1.8, D - 1.2), 1.3, fr, 4);
-    if (f >= 1) k.box(2.6, 0.28, 1.5, f === 2 ? M.composite : M.timber, cx - W / 2 + 1.4, 0, z0 + D + 0.75, 5);
-    for (var pz = 9.6; pz < z0 - 0.3; pz += 0.9) k.box(0.7, 0.04, 0.6, M.pavers, cx - W / 2 + 1.2, 0, pz, 5, { ns: 1 });
+    var W = Math.sqrt(A * 1.5), D = A / W, x0 = 11 - W - 0.5, z0 = 13, cx = x0 + W / 2, cz = z0 + D / 2, fz = z0 + D;
+    k.box(W + 0.3, 0.32, D + 0.3, M.plinth, cx, 0, cz, 0);
+    k.box(W, 2.55, D, P.wall, cx, 0.32, cz, 1);
+    if (f >= 1) k.clad("z", cx - W / 2 + 0.02, cx - W / 2 + 2.1, 0.34, 2.85, fz, P.feat, P.featType, 2);
+    else k.clad("x", z0 + 0.1, fz - 0.1, 0.34, 2.85, cx + W / 2, P.feat, "board", 2);
+    k.roof(cx, cz, W, D, 2.87, 1.15, 0.45, P, 3);
+    k.door("z", cx - W / 2 + 1.0, 0.32, fz + (f >= 1 ? 0.045 : 0), 0.9, 2.1, P, 4);
+    k.win("z", cx + 0.9, 1.0, fz, 1.8, 1.35, P, 4);
+    if (W > 7.2) k.win("z", cx + W / 2 - 1.1, 1.0, fz, 1.2, 1.35, P, 4);
+    k.win("x", cz, 1.0, cx + W / 2 + (f === 0 ? 0.03 : 0), Math.min(1.8, D - 1.2), 1.35, P, 4);
+    // porch deck with steps
+    var dk = [M.pine, M.spottedGum, M.composite][f], pw = 2.8, pz = fz + 0.8;
+    for (var b = 0; b < 11; b++) k.box(pw, 0.03, 0.135, dk, cx - W / 2 + 1.4, 0.29, fz + 0.08 + b * 0.142, 5, { ns: 1 });
+    k.box(pw, 0.27, 1.55, M.plinth, cx - W / 2 + 1.4, 0, pz, 5);
+    k.box(1.0, 0.15, 0.3, P.pav, cx - W / 2 + 1.4, 0, fz + 1.75, 5);
+    for (var pz2 = 9.8, n = 0; pz2 < z0 - 0.4 && n < 8; pz2 += 0.85, n++) k.box(0.75, 0.04, 0.6, P.pav, cx - W / 2 + 1.4, 0, pz2, 6, { ns: 1 });
+    k.bed(cx + 1.2, fz + 0.9, 2.6, 0.6, P, 6);
+    k.tree(x0 - 1.6, cz + 0.5, 4.0, 6); k.shrub(cx + W / 2 + 0.7, fz - 0.4, 1.0, 6);
   };
 
   B.deck = function (k, s, f, A) {
-    var M = k.M;
+    var M = k.M, P = extPal(M, f);
     k.mass(5.5, -3.5, 11, 7, 2.7, 1.6, true);
-    var W = Math.min(11, Math.max(3, Math.sqrt(A * 2))), D = A / W, cx = 5.5, z0 = 0.02, h = 0.6, cz = z0 + D / 2;
-    var bm = [M.pine, M.timber, M.composite][f], post = f === 2 ? M.frameBlack : M.timber;
-    // stumps, bearers, joists
+    var W = Math.min(11, Math.max(3, Math.sqrt(A * 2))), D = A / W, cx = 5.5, z0 = 0.02, h = 0.6, cz = z0 + D / 2, zf = z0 + D;
+    var bm = [M.pine, M.spottedGum, M.composite][f], post = f === 2 ? M.frameBlack : bm;
     var npx = Math.ceil(W / 1.8) + 1;
-    for (var ip = 0; ip < npx; ip++) for (var pz = z0 + 0.3; pz <= z0 + D; pz += 1.8) k.box(0.09, h - 0.22, 0.09, M.slab, cx - W / 2 + 0.15 + (W - 0.3) * ip / (npx - 1), 0, pz, 0);
-    for (var bz = z0 + 0.3; bz <= z0 + D; bz += 1.8) k.box(W, 0.1, 0.09, M.timber, cx, h - 0.25, bz, 1);
-    // boards with real gaps
-    var bwid = 0.135, nb = Math.min(80, Math.floor(D / (bwid + 0.006)));
-    for (var i = 0; i < nb; i++) k.box(W, 0.025, bwid, bm, cx, h - 0.025, z0 + (i + 0.5) * (D / nb), 2, { ns: 1 });
-    k.box(W, 0.2, 0.025, bm, cx, h - 0.2, z0 + D + 0.012, 2);
-    // stairs
-    for (var st = 0; st < 3; st++) k.box(1.3, 0.035, 0.3, bm, cx, h - 0.2 * (st + 1), z0 + D + 0.17 + st * 0.3, 3, { ns: 1 });
-    // balustrade
-    var top = h + 1.0, gap0 = cx - 0.7, gap1 = cx + 0.7;
+    for (var ip = 0; ip < npx; ip++) for (var pz = z0 + 0.3; pz <= zf; pz += 1.8) k.box(0.09, h - 0.22, 0.09, M.slab, cx - W / 2 + 0.15 + (W - 0.3) * ip / (npx - 1), 0, pz, 0);
+    for (var bz = z0 + 0.3; bz <= zf; bz += 1.8) k.box(W, 0.1, 0.09, M.spottedGum, cx, h - 0.25, bz, 1);
+    var nb = Math.min(80, Math.floor(D / 0.141));
+    for (var i = 0; i < nb; i++) k.box(W, 0.025, 0.135, bm, cx, h - 0.025, z0 + (i + 0.5) * (D / nb), 2, { ns: 1 });
+    k.box(W, 0.2, 0.025, bm, cx, h - 0.2, zf + 0.012, 2);
+    for (var st = 0; st < 3; st++) k.box(1.4, 0.035, 0.3, bm, cx, h - 0.2 * (st + 1), zf + 0.17 + st * 0.3, 3, { ns: 1 });
+    var top = h + 1.0, gap0 = cx - 0.75, gap1 = cx + 0.75;
     function rail(ax, az, bx, bz) {
       var len = Math.hypot(bx - ax, bz - az), alongX = Math.abs(bx - ax) > Math.abs(bz - az), mx = (ax + bx) / 2, mz = (az + bz) / 2;
-      if (f === 2) {
-        k.box(alongX ? len : 0.012, 0.95, alongX ? 0.012 : len, M.glass, mx, h + 0.03, mz, 4, { ns: 1 });
-        k.box(alongX ? len : 0.05, 0.04, alongX ? 0.05 : len, M.frameBlack, mx, top - 0.02, mz, 4, { ns: 1 });
-      } else {
-        k.box(alongX ? len : 0.07, 0.045, alongX ? 0.07 : len, bm, mx, top - 0.04, mz, 4);
-        var nbal = Math.min(60, Math.floor(len / 0.12));
-        for (var j = 1; j < nbal; j++) { var t = j / nbal; k.box(0.035, 0.92, 0.035, bm, ax + (bx - ax) * t, h, az + (bz - az) * t, 4, { ns: 1 }); }
-      }
+      if (f === 2) { k.box(alongX ? len : 0.012, 0.95, alongX ? 0.012 : len, M.glass, mx, h + 0.03, mz, 4, { ns: 1 }); k.box(alongX ? len : 0.05, 0.04, alongX ? 0.05 : len, M.frameBlack, mx, top - 0.02, mz, 4, { ns: 1 }); }
+      else { k.box(alongX ? len : 0.07, 0.045, alongX ? 0.07 : len, bm, mx, top - 0.04, mz, 4);
+        var nbal = Math.min(60, Math.floor(len / (f === 1 ? 0.11 : 0.13)));
+        for (var j = 1; j < nbal; j++) { var t = j / nbal; k.box(f === 1 ? 0.042 : 0.035, 0.9, f === 1 ? 0.042 : 0.035, f === 1 ? M.frameBronze : bm, ax + (bx - ax) * t, h, az + (bz - az) * t, 4, { ns: 1 }); } }
     }
-    var zf = z0 + D;
-    rail(cx - W / 2, zf, gap0, zf); rail(gap1, zf, cx + W / 2, zf);
-    rail(cx - W / 2, z0, cx - W / 2, zf); rail(cx + W / 2, z0, cx + W / 2, zf);
+    rail(cx - W / 2, zf, gap0, zf); rail(gap1, zf, cx + W / 2, zf); rail(cx - W / 2, z0, cx - W / 2, zf); rail(cx + W / 2, z0, cx + W / 2, zf);
     [[cx - W / 2, zf], [gap0, zf], [gap1, zf], [cx + W / 2, zf], [cx - W / 2, z0 + D / 2], [cx + W / 2, z0 + D / 2]].forEach(function (p) { k.box(0.09, 1.02, 0.09, post, p[0], h, p[1], 3); });
-    // covered: posts, beam, sloped roof sheet
     if (s.roof) {
       var cols = Math.max(2, Math.ceil(W / 3.6) + 1);
       for (var c = 0; c < cols; c++) k.box(0.12, 2.45, 0.12, post, cx - W / 2 + 0.1 + (W - 0.2) * c / (cols - 1), h, zf - 0.08, 4);
-      k.box(W, 0.22, 0.12, f === 2 ? M.frameBlack : M.timber, cx, h + 2.45, zf - 0.08, 4);
-      var rf = k.box(W + 0.3, 0.05, D + 0.35, f === 2 ? M.roofMetal : M.roofSheet, cx, h + 2.72, cz + 0.08, 5);
-      rf.rotation.x = 0.06;
+      k.box(W + 0.2, 0.25, 0.12, f === 2 ? P.trim : M.spottedGum, cx, h + 2.45, zf - 0.08, 4);
+      var nr = Math.round(W / 0.9);
+      for (var r = 0; r <= nr; r++) { var rf = k.box(0.05, 0.16, D + 0.1, f === 2 ? P.trim : M.spottedGum, cx - W / 2 + W * r / nr, h + 2.55, cz, 5, { ns: 1 }); rf.rotation.x = 0.05; }
+      if (f === 2) { for (var lv = 0; lv < Math.floor(D / 0.22); lv++) { var bl = k.box(W, 0.02, 0.17, P.trim, cx, h + 2.72, z0 + 0.12 + lv * 0.22, 5, { ns: 1 }); bl.rotation.x = 0.5; } }
+      else { var sh = k.box(W + 0.3, 0.04, D + 0.35, P.roof, cx, h + 2.74, cz + 0.08, 5); sh.rotation.x = 0.05; }
+      k.pendant(cx - W / 4, cz, h + 2.6, 0.7, "globe", P.accent, 6);
     }
+    // outdoor setting on the deck, planters
+    var tw = Math.min(1.8, W * 0.35);
+    k.table(cx - W / 4, cz, tw, 0.9, 0.74, f === 2 ? M.stoneWhite : M.spottedGum, M.blackMetal, 6);
+    k.chair(cx - W / 4 - tw / 4, cz + 0.65, -1, f === 2 ? M.charBatten : M.oak, M.blackMetal, 6); k.chair(cx - W / 4 + tw / 4, cz + 0.65, -1, f === 2 ? M.charBatten : M.oak, M.blackMetal, 6);
+    k.chair(cx - W / 4 - tw / 4, cz - 0.65, 1, f === 2 ? M.charBatten : M.oak, M.blackMetal, 6); k.chair(cx - W / 4 + tw / 4, cz - 0.65, 1, f === 2 ? M.charBatten : M.oak, M.blackMetal, 6);
+    k.g.children.slice(-45).forEach(function (o) { if (o.userData.stage === 6) { o.position.y += h; o.userData.ty = o.position.y; } });
+    k.pot(cx + W / 2 - 0.45, z0 + 0.45, 0.26, 0.6, P.pot, 6, true); k.g.children.slice(-8).forEach(function (o) { o.position.y += h; o.userData.ty = o.position.y; });
+    k.tree(cx + W / 2 + 1.8, zf - 0.6, 4.4, 6); k.shrub(cx - W / 2 - 0.8, zf + 0.3, 1.1, 6); k.shrub(cx + 1.6, zf + 1.1, 0.8, 6);
   };
 
   B.newhome = function (k, s, f, A) {
-    var M = k.M, fr = frameMat(M, f);
-    var stc = A > 250 ? 2 : 1, F = A / stc, W = Math.sqrt(F * 1.35), D = F / W, cx = W / 2, cz = D / 2;
-    if (s.demo) { k.box(10, 2.7, 8, M.brick, cx, 0, cz, -1, { demo: 1 }); k.gable(8.6, 10.6, 1.6, M.roofTile, cx, 2.7, cz, -1, true, { demo: 1 }); }
-    var o = { };
-    k.box(W + 0.3, 0.3, D + 0.3, M.slab, cx, 0, cz, 0, o);
-    var gWall = [M.brick, M.render, M.render][f];
-    k.box(W, 2.7, D, gWall, cx, 0.3, cz, 1);
-    var topY = 3.0;
-    if (stc === 2) {
-      k.box(W + 0.06, 0.25, D + 0.06, M.slab, cx, 3.0, cz, 2);
-      k.box(W, 2.6, D, f === 2 ? M.cladDark : M.renderLight, cx, 3.25, cz, 2);
-      topY = 5.85;
-    }
-    k.box(W + 0.8, 0.14, 0.14, f === 2 ? M.frameBlack : M.frameAlu, cx, topY - 0.1, D + 0.4, 3, { ns: 1 });
-    k.gable(D + 0.8, W + 0.8, 1.9, f === 2 ? M.roofMetal : M.roofTile, cx, topY, cz, 3, true);
-    // facade: garage, entry, windows
-    var gx = W - 1.8;
-    k.face("z", gx, 0.3, D, 2.7, 2.25, 0.02, M.gap, 4, { ns: 1 });
-    k.face("z", gx, 0.3, D + 0.02, 2.55, 2.15, 0.04, f === 2 ? M.cladDark : M.gdoor, 4, { ns: 1 });
-    k.box(3.0, 0.06, 5.5, M.pavers, gx, 0, D + 2.9, 5);
-    var ex = W - 4.3;
-    if (f === 2) k.face("z", ex, 0.3, D, 2.0, 2.7, 0.05, M.cladDark, 4, { ns: 1 });
-    k.door("z", ex, 0.3, D + (f === 2 ? 0.05 : 0), 1.0, 2.3, f === 0 ? M.gdoor : M.cabTimber, fr, 4);
-    k.box(1.4, 0.15, 0.6, M.slab, ex, 0.15, D + 0.45, 5);
-    var nwin = Math.max(1, Math.floor((ex - 1.3) / 2.6));
-    for (var i = 0; i < nwin; i++) k.win("z", 0.9 + (ex - 1.8) * (i + 0.5) / nwin, 1.0, D, 1.6, 1.4, fr, 4);
-    if (stc === 2) { var nu = Math.max(2, Math.floor(W / 2.9)); for (var j = 0; j < nu; j++) k.win("z", W * (j + 0.5) / nu, 3.7, D, 1.6, 1.4, fr, 4); }
-    k.win("x", cz, 1.0, W, Math.min(2.2, D - 1.5), 1.4, fr, 4);
-    if (stc === 2) k.win("x", cz, 3.7, W, Math.min(2.2, D - 1.5), 1.4, fr, 4);
+    var M = k.M, P = extPal(M, f);
+    var stc = A > 250 ? 2 : 1, F = A / stc, W = Math.sqrt(F * 1.35), D = F / W, cx = W / 2, cz = D / 2, fz = D;
+    if (s.demo) { k.box(10, 2.7, 8, M.brick, cx, 0, cz, -1, { demo: 1 }); k.gable(8.8, 10.8, 1.6, M.roofTile, cx, 2.7, cz, -1, true, { demo: 1 }); }
+    k.box(W + 0.3, 0.32, D + 0.3, M.plinth, cx, 0, cz, 0);
+    var gWall = f === 0 ? M.brick : P.wall;
+    k.box(W, 2.73, D, gWall, cx, 0.32, cz, 1);
+    var topY = 3.05;
+    if (stc === 2) { k.box(W + 0.06, 0.3, D + 0.06, P.trim, cx, 3.05, cz, 2); k.box(W, 2.6, D, f === 0 ? M.renderWhite : P.wall, cx, 3.35, cz, 2); topY = 5.95;
+      if (f >= 1) k.clad("z", cx - W / 2 + 0.02, cx - W / 2 + Math.min(4, W * 0.4), 3.37, 5.93, fz, P.feat, P.featType, 3); }
+    k.roof(cx, cz, W, D, topY, 1.85, 0.55, P, 3);
+    // garage with panel door, driveway
+    var gx = W - 1.85;
+    k.face("z", gx, 0.32, fz, 2.9, 2.3, 0.01, M.inside, 4, { ns: 1 });
+    k.face("z", gx, 0.32, fz + 0.012, 2.7, 2.2, 0.04, P.gdoor, 4, { ns: 1 });
+    k.face("z", gx, 2.62, fz, 3.0, 0.1, 0.09, P.frame, 4, { ns: 1 });
+    k.box(3.1, 0.06, 6.0, M.drive, gx, 0, fz + 3.1, 6, { ns: 1 });
+    // entry: portico on slim posts, pivot door, sidelight, stepping stones
+    var ex = W - 4.6;
+    if (f >= 1) k.clad("z", ex - 1.1, ex + 1.4, 0.34, 3.03, fz, P.feat, P.featType, 2);
+    k.door("z", ex, 0.32, fz + (f >= 1 ? 0.045 : 0), 1.0, 2.35, P, 4);
+    k.box(2.6, 0.22, 1.6, P.trim, ex + 0.25, 2.85, fz + 0.8, 4); k.box(2.5, 0.02, 1.5, P.soffit, ex + 0.25, 2.83, fz + 0.8, 4, { ns: 1 });
+    k.box(0.09, 2.53, 0.09, P.frame, ex + 1.45, 0.32, fz + 1.5, 4);
+    k.box(1.6, 0.16, 1.4, P.pav, ex + 0.25, 0.16, fz + 0.75, 4);
+    for (var sz = fz + 1.9, n = 0; sz < fz + 5.5 && n < 5; sz += 0.85, n++) k.box(0.9, 0.04, 0.55, P.pav, ex + 0.25, 0, sz, 6, { ns: 1 });
+    var nwin = Math.max(1, Math.floor((ex - 1.4) / 2.7));
+    for (var i = 0; i < nwin; i++) k.win("z", 0.9 + (ex - 1.9) * (i + 0.5) / nwin, 1.0, fz, 1.7, 1.45, P, 4);
+    if (stc === 2) { var nu = Math.max(2, Math.floor(W / 3.1)); for (var j = 0; j < nu; j++) { var ux = W * (j + 0.5) / nu; if (f >= 1 && ux < Math.min(4, W * 0.4) + 0.6) continue; k.win("z", ux, 3.85, fz, 1.6, 1.45, P, 4); } }
+    k.win("x", cz, 1.0, W, Math.min(2.2, D - 1.6), 1.45, P, 4);
+    if (stc === 2) k.win("x", cz, 3.85, W, Math.min(2.2, D - 1.6), 1.45, P, 4);
+    // garden: beds along the front, trees, letterbox pier
+    k.bed(1.6, fz + 0.75, Math.max(1.4, ex - 3.0), 0.6, P, 6);
+    k.tree(-1.9, fz + 2.6, 5.2, 6); k.tree(W + 2.4, cz - 1.5, 4.6, 6);
+    k.shrub(ex - 1.6, fz + 3.2, 1.1, 6); k.shrub(-0.9, cz - 2, 1.0, 6);
+    k.box(0.45, 1.1, 0.35, f === 0 ? M.brick : P.wall, ex + 1.4, 0, fz + 5.6, 6); k.box(0.38, 0.12, 0.05, P.accent, ex + 1.4, 0.85, fz + 5.78, 6, { ns: 1 });
+  };
+
+  // instanced copies of one part (desks, chairs, monitors): one draw call however big the floor gets
+  Kit.prototype.inst = function (g, mat, list, h, stage, o) {
+    if (!list.length) return null;
+    var m = new T.InstancedMesh(g, mat, list.length), d = new T.Object3D();
+    for (var i = 0; i < list.length; i++) { var p = list[i]; d.position.set(p[0], p[1], p[2]); d.rotation.set(0, p[3] || 0, 0); d.scale.set(p[4] || 1, 1, 1); d.updateMatrix(); m.setMatrixAt(i, d.matrix); }
+    m.instanceMatrix.needsUpdate = true; m.frustumCulled = false;
+    o = o || {}; o.base = true; return this.put(m, h, stage, o);
   };
 
   B.fitout = function (k, s, f, A) {
-    var M = k.M, fr = frameMat(M, f), W = Math.sqrt(A * 1.2), D = A / W, H = 3.2, cx = W / 2, cz = D / 2;
+    var M = k.M, W = Math.sqrt(A * 1.2), D = A / W, H = 3.2, cx = W / 2, cz = D / 2;
+    var P = [
+      { floor: M.carpet, zone: M.carpet, frame: M.frameSilver, top: M.stoneWhite, desk: M.cabWhite, leg: M.steel, accent: M.chrome, chair: M.fabricCharcoal, screen: M.frost,
+        fascia: M.trimSurf, counter: M.cabWhite, wall: M.plaster, feature: null, pend: "dome", pendMat: M.cabWhite, sofa: M.fabricCharcoal, kit: M.cabWhite, ktop: M.stoneWhite, pot: M.potStone },
+      { floor: M.carpetWarm, zone: M.floorOak, frame: M.frameBronze, top: M.stoneWhite, desk: M.oak, leg: M.blackMetal, accent: M.nickel, chair: M.fabricSage, screen: M.fabricSage,
+        fascia: M.trimBasalt, counter: M.oak, wall: M.plaster, feature: M.paintSage, pend: "drum", pendMat: M.linenOat, sofa: M.linenOat, kit: M.cabSage, ktop: M.stoneWhite, pot: M.potStone },
+      { floor: M.polished, zone: M.floorWalnut, frame: M.frameBlack, top: M.marble, desk: M.walnut, leg: M.blackMetal, accent: M.brass, chair: M.linenOat, screen: M.linenOat,
+        fascia: M.trimMon, counter: M.walnut, wall: M.plasterWarm, feature: M.walnut, pend: "globe", pendMat: M.brass, sofa: M.fabricCharcoal, kit: M.cabCharcoal, ktop: M.marble, pot: M.potCharcoal }
+    ][f];
+    var big = A >= 100;
+    // shell: slab, floor, two walls, shopfront with signage band
     k.box(W + 0.4, 0.2, D + 0.4, M.slab, cx, -0.2, cz, 0);
-    k.box(W, 0.02, D, [M.carpet, M.carpet, M.floorTimber][f], cx, 0, cz, 0, { ns: 1 });
-    k.box(W + 0.2, H, 0.2, M.plaster, cx, 0, -0.1, 1); k.box(0.2, H, D, M.plaster, -0.1, 0, cz, 1);
-    // shopfront glazing with a central entry
+    k.box(W, 0.02, D, P.floor, cx, 0, cz, 0, { ns: 1 });
+    k.box(W + 0.2, H, 0.2, P.wall, cx, 0, -0.1, 1); k.box(0.2, H, D, P.wall, -0.1, 0, cz, 1);
     var ns = Math.max(2, Math.round(W / 1.6)), pw = W / ns, zf = D;
-    for (var i = 0; i <= ns; i++) k.box(0.07, H, 0.1, fr, Math.min(W - 0.035, Math.max(0.035, pw * i)), 0, zf, 3, { ns: 1 });
-    k.box(W, 0.07, 0.1, fr, cx, 2.55, zf, 3, { ns: 1 }); k.box(W, 0.08, 0.1, fr, cx, H - 0.08, zf, 3, { ns: 1 });
-    for (var g = 0; g < ns; g++) { var u = pw * (g + 0.5); if (Math.abs(u - cx) < pw * 0.6) continue; k.box(pw - 0.07, 2.5, 0.02, M.glass, u, 0.03, zf, 4, { ns: 1 }); }
-    // reception counter
-    var cmat = [M.cabWhite, M.cabTimber, M.cabDark][f];
-    k.box(2.6, 1.0, 0.7, cmat, 2.2, 0.02, D - 2.4, 3); k.box(2.7, 0.05, 0.8, f === 2 ? M.stoneDark : M.stoneLight, 2.2, 1.02, D - 2.4, 4);
-    // meeting rooms behind glass
-    if (f >= 1) {
-      var nr = Math.max(1, Math.min(5, Math.round(W / 4.2))), rd = Math.min(3.4, D * 0.38), rw = W / nr;
+    for (var i = 0; i <= ns; i++) k.box(0.07, H - 0.55, 0.1, P.frame, Math.min(W - 0.035, Math.max(0.035, pw * i)), 0, zf, 3, { ns: 1 });
+    k.box(W, 0.07, 0.1, P.frame, cx, 2.4, zf, 3, { ns: 1 });
+    k.box(W + 0.2, 0.3, 0.14, P.fascia, cx, H - 0.3, zf + 0.02, 3); k.box(Math.min(3, W * 0.35), 0.12, 0.02, f === 2 ? M.brass : M.cabWhite, cx, H - 0.21, zf + 0.1, 4, { ns: 1 });
+    for (var g = 0; g < ns; g++) { var u = pw * (g + 0.5); if (Math.abs(u - cx) < pw * 0.6) { k.box(pw - 0.12, 2.3, 0.02, M.glass, u, 0.03, zf - 0.25, 4, { ns: 1 }); continue; } k.box(pw - 0.07, 2.35, 0.02, M.glass, u, 0.03, zf, 4, { ns: 1 }); }
+
+    // zones scale with the floor: meeting rooms along the back, kitchen and lounge down the left, reception at the front, desks fill the rest
+    var rd = A >= 90 ? Math.max(2.6, Math.min(3.8, D * 0.26)) : 0;
+    var kw = A >= 140 ? 3.6 : A >= 75 ? 1.5 : 0;
+    var chairs = [], seatL = [], backL = [], stemL = [], baseL = [];
+    function chair(x, z, rot) {   // task chair facing direction rot (0 = faces +z)
+      var sx = Math.sin(rot), sz = Math.cos(rot);
+      seatL.push([x, 0.47, z, rot]); backL.push([x - sx * 0.22, 0.72, z - sz * 0.22, rot]); stemL.push([x, 0.06, z, 0]); baseL.push([x, 0.045, z, 0]);
+    }
+
+    // meeting rooms
+    if (rd) {
+      var nr = Math.max(1, Math.round(W / 4.6)), rw = W / nr;
       for (var r = 0; r < nr; r++) {
-        var rx = rw * (r + 0.5);
-        k.box(rw - 1.0, 2.7, 0.02, M.glass, rx + 0.3, 0.02, rd, 4, { ns: 1 });
-        k.box(0.06, 2.7, rd, fr, rw * (r + 1) - 0.03, 0.02, rd / 2, 4, { ns: 1 });
-        k.box(rw, 0.06, 0.06, fr, rx, 2.7, rd, 4, { ns: 1 });
-        k.box(Math.min(2.2, rw - 1.2), 0.04, 1.0, cmat, rx, 0.72, rd / 2, 5); k.box(0.12, 0.7, 0.12, M.frameBlack, rx, 0.02, rd / 2, 5, { ns: 1 });
+        var x0 = rw * r, rcx = x0 + rw / 2, dgap = 0.95, gl = rw - dgap - 0.1;
+        k.box(gl, 2.7, 0.02, M.glass, x0 + 0.05 + gl / 2 + dgap, 0.02, rd, 4, { ns: 1 });
+        if (f >= 1) k.box(gl, 0.22, 0.024, M.frost, x0 + 0.05 + gl / 2 + dgap, 1.15, rd, 4, { ns: 1 });
+        k.box(dgap - 0.06, 2.2, 0.035, f === 2 ? M.walnut : f === 1 ? M.oak : M.cabWhite, x0 + 0.05 + dgap / 2, 0.02, rd, 4, { ns: 1 });
+        k.box(rw, 0.06, 0.07, P.frame, rcx, 2.7, rd, 4, { ns: 1 });
+        if (r < nr - 1) { k.box(0.015, 2.7, rd, M.glass, x0 + rw, 0.02, rd / 2, 4, { ns: 1 }); k.box(0.05, 0.06, rd, P.frame, x0 + rw, 2.7, rd / 2, 4, { ns: 1 }); }
+        k.box(0.05, 2.7, 0.05, P.frame, x0 + rw - 0.03, 0.02, rd, 4, { ns: 1 });
+        var tw = Math.max(1.2, Math.min(3.2, rw - 1.6)), td = Math.min(1.1, rd - 1.5);
+        if (f === 2) k.box(tw + 1.2, 0.012, td + 1.3, M.rug, rcx, 0.02, rd / 2 + 0.1, 5, { ns: 1, r: 0.006 });
+        k.table(rcx, rd / 2 + 0.1, tw, td, 0.74, P.desk, M.blackMetal, 5);
+        var nc = Math.max(1, Math.floor(tw / 0.75));
+        for (var c = 0; c < nc; c++) { var chx = rcx - tw / 2 + tw * (c + 0.5) / nc; chair(chx, rd / 2 + 0.1 - td / 2 - 0.35, 0); chair(chx, rd / 2 + 0.1 + td / 2 + 0.35, Math.PI); }
+        k.box(Math.min(1.6, rw * 0.4), 0.9, 0.04, M.blackGlass, rcx, 1.15, 0.04, 5, { ns: 1 });
+        k.pendant(rcx, rd / 2 + 0.1, H, 0.95, f === 0 ? "dome" : P.pend, P.pendMat, 5);
       }
     }
-    // workstations
-    var dz0 = (f >= 1 ? Math.min(3.4, D * 0.38) : 0) + 1.2, dz1 = D - 3.6, nx = Math.max(1, Math.floor((W - 1.5) / 1.8));
-    for (var dz = dz0, rows = 0; dz <= dz1 && rows < 4; dz += 1.9, rows++) for (var ix = 0; ix < nx && ix < 6; ix++) {
-      var dx = 1.2 + ix * 1.8;
-      k.box(1.5, 0.03, 0.75, f === 0 ? M.cabWhite : M.cabTimber, dx, 0.72, dz, 5);
-      k.box(0.04, 0.72, 0.7, fr, dx - 0.72, 0.02, dz, 5, { ns: 1 }); k.box(0.04, 0.72, 0.7, fr, dx + 0.72, 0.02, dz, 5, { ns: 1 });
-      k.cyl(0.24, 0.24, 0.07, M.fabric, dx, 0.44, dz + 0.6, 5);
+
+    // kitchen and breakout along the left wall
+    var kz0 = rd + 0.5, kl = 0, kz1 = kz0;
+    if (kw) {
+      kl = Math.min(5.2, D - kz0 - (kw > 2 ? 3.6 : 1.0)); if (kl < 1.8) kl = 0;
+      if (kw > 2) k.box(kw, 0.02, D - rd - 0.05, P.zone, kw / 2, 0.012, (rd + D) / 2, 1, { ns: 1 });
+      if (P.feature && f === 1) k.box(0.02, H - 0.2, Math.max(kl, 2) + 0.6, P.feature, 0.01, 0.02, kz0 + Math.max(kl, 2) / 2, 2, { ns: 1 });
     }
-    // bespoke: timber batten feature wall + pendants
-    if (f === 2) {
-      for (var bz = Math.max(0.3, D - 4.2), n = 0; bz < D - 0.4 && n < 40; bz += 0.1, n++) k.box(0.05, H - 0.4, 0.045, M.timber, 0.03, 0.2, bz, 5, { ns: 1 });
-      for (var p = 0; p < 3; p++) { var lx = 1.5 + p * 0.7; k.cyl(0.004, 0.004, 1.2, M.frameBlack, lx, H - 1.2, D - 2.4, 5, { ns: 1 }); k.cyl(0.08, 0.16, 0.22, M.lamp, lx, H - 1.42, D - 2.4, 5, { ns: 1 }); }
+    if (kl) {
+      kz1 = kz0 + kl; var kc = (kz0 + kz1) / 2;
+      k.box(0.6, 0.1, kl - 0.9, M.inside, 0.3, 0.02, kc - 0.45, 2, { ns: 1 });
+      k.box(0.62, 0.76, kl - 0.9, P.kit, 0.31, 0.12, kc - 0.45, 3, { r: 0.006 });
+      k.box(0.65, 0.04, kl - 0.88, P.ktop, 0.325, 0.88, kc - 0.45, 3);
+      k.box(0.02, 0.6, kl - 0.9, f === 2 ? M.marble : M.tileSubway, 0.015, 0.92, kc - 0.45, 3, { ns: 1 });
+      k.box(0.65, 2.15, 0.88, f === 0 ? M.steel : P.kit, 0.33, 0.02, kz1 - 0.45, 3, { r: 0.008 });
+      if (f === 0) k.box(0.36, 0.7, kl - 0.9, P.kit, 0.18, 1.6, kc - 0.45, 4, { r: 0.006 });
+      else [1.6, 1.95].forEach(function (yy) { k.box(0.28, 0.04, kl - 1.2, f === 2 ? M.walnut : M.oak, 0.14, yy, kc - 0.45, 4); });
+      k.box(0.42, 0.012, 0.5, M.inside, 0.33, 0.9, kz0 + 0.8, 4, { ns: 1 });
+      k.cyl(0.014, 0.014, 0.32, P.accent, 0.1, 0.92, kz0 + 0.8, 5, { ns: 1, seg: 10 });
+      if (kw > 2) {   // island with stools and pendants
+        var il = Math.min(2.6, kl - 0.8), ix = 2.0;
+        k.box(0.9, 0.76, il, P.counter, ix, 0.12, kc, 3, { r: 0.008 }); k.box(1.15, 0.04, il + 0.1, P.ktop, ix + 0.1, 0.88, kc, 3);
+        var nst = Math.max(2, Math.floor(il / 0.6));
+        for (var q = 0; q < nst; q++) { var sz2 = kc - il / 2 + il * (q + 0.5) / nst; k.stool(ix + 0.85, sz2, f === 2 ? M.linenOat : M.oak, M.blackMetal, 5); }
+        for (var pp = 0; pp < Math.min(3, nst); pp++) k.pendant(ix, kc - il / 2 + il * (pp + 0.5) / Math.min(3, nst), H, 1.1, f === 0 ? "dome" : P.pend, P.pendMat, 5);
+        k.blob(1.6, il + 0.6, ix, kc, 3);
+      }
     }
+    // lounge at the front left
+    if (kw > 2 && D - kz1 > 3.2) {
+      var lz = D - 2.0;
+      if (f === 2) for (var bz = kz1 + 0.3, nb2 = 0; bz < D - 0.4 && nb2 < 60; bz += 0.1, nb2++) k.box(0.05, H - 0.4, 0.045, M.walnut, 0.03, 0.2, bz, 5, { ns: 1 });
+      k.box(3.0, 0.012, 2.2, M.rug, 1.8, 0.02, lz + 0.3, 5, { ns: 1, r: 0.006 });
+      k.sofa(1.8, lz - 0.2, 2.2, 1, P.sofa, M.blackMetal, 5);
+      k.box(1.0, 0.36, 0.55, f === 2 ? M.marble : P.desk, 1.8, 0.02, lz + 0.9, 5, { r: 0.02 });
+      k.pot(0.45, D - 0.5, 0.24, 0.55, P.pot, 6, true);
+    }
+
+    // reception at the front, facing the door
+    var recW = big ? 2.6 : 1.8, recX = kw + 0.7 + recW / 2, recZ = D - 1.9;
+    if (kw > 2 && D - kz1 > 3.2) { recX = Math.max(recX, cx - 0.4 - recW); }
+    k.box(recW, 1.02, 0.7, P.counter, recX, 0.02, recZ, 3, { r: 0.01 }); k.box(recW + 0.12, 0.05, 0.82, P.top, recX, 1.04, recZ, 4);
+    if (f >= 1) for (var bt = 0, nbt = Math.floor(recW / 0.109); bt < nbt; bt++) k.box(0.05, 0.96, 0.04, P.counter, recX - recW / 2 + 0.06 + bt * 0.109, 0.04, recZ + 0.37, 4, { ns: 1 });
+    chair(recX, recZ - 0.75, Math.PI);
+    k.blob(recW + 0.6, 1.4, recX, recZ, 3);
+    for (var pq = 0; pq < (big ? 3 : 2); pq++) k.pendant(recX - recW / 2 + recW * (pq + 0.5) / (big ? 3 : 2), recZ, H, 1.05, f === 0 ? "dome" : "globe", f === 0 ? M.cabWhite : P.accent, 5);
+
+    // workstations: benches of facing desks, spread evenly over whatever floor is left
+    var wx0 = big ? kw + 1.1 : recX + recW / 2 + 0.9, wx1 = W - 0.7, wz0 = rd + 1.1, wz1 = big ? D - 3.1 : D - 0.9;
+    if (kw && kw <= 2) wx0 = Math.max(wx0, kw + 1.1);
+    var cwid = 1.6, ch = 3.5, grp = 4, gap = 1.0;
+    function span(n) { return n * cwid + Math.floor((n - 1) / grp) * gap; }
+    var cols = 0; while (span(cols + 1) <= wx1 - wx0 && cols < 18) cols++;
+    var rows = Math.min(8, Math.floor((wz1 - wz0) / ch)), single = false;
+    if (!rows && wz1 - wz0 >= 1.8) { rows = 1; single = true; }
+    var topL = [], legL = [], monL = [], standL = [], scrL = [], lampL = [];
+    if (cols && rows) {
+      var gx0 = (wx0 + wx1) / 2 - span(cols) / 2 + cwid / 2, rowsSpan = single ? 1.8 : rows * ch, gz0 = (wz0 + wz1) / 2 - rowsSpan / 2 + (single ? 0.9 : ch / 2);
+      for (var rr = 0; rr < rows; rr++) {
+        var zc = gz0 + rr * ch;
+        for (var cc = 0; cc < cols; cc++) {
+          var xc = gx0 + cc * cwid + Math.floor(cc / grp) * gap;
+          var sides = single ? [-1] : [-1, 1];
+          sides.forEach(function (sd) {
+            var dz = single ? zc : zc + sd * 0.4;
+            topL.push([xc, 0.735, dz]); legL.push([xc - 0.72, 0.37, dz]); legL.push([xc + 0.72, 0.37, dz]);
+            var mz = single ? dz - 0.25 : zc + sd * 0.14;
+            monL.push([xc, 1.02, mz]); standL.push([xc, 0.83, mz]);
+            chair(xc, single ? dz + 0.62 : zc + sd * 1.05, single ? Math.PI : (sd < 0 ? 0 : Math.PI));
+            if (f === 2 && cc % 2 === 0) lampL.push([xc + 0.55, 0.8, mz]);
+          });
+          if (!single) scrL.push([xc, 0.94, zc]);
+        }
+        // a linear pendant over each bench run
+        var runL = span(cols), rx = gx0 - cwid / 2 + runL / 2;
+        k.box(runL - 0.4, 0.05, 0.1, f === 2 ? M.blackMetal : P.frame, rx, 2.55, zc, 5, { ns: 1 });
+        k.box(runL - 0.5, 0.012, 0.07, M.lamp, rx, 2.54, zc, 5, { ns: 1 });
+        [rx - runL / 2 + 0.4, rx + runL / 2 - 0.4].forEach(function (lx) { k.cyl(0.004, 0.004, H - 2.6, M.blackMetal, lx, 2.6, zc, 5, { ns: 1, seg: 6 }); });
+        k.blob(runL + 0.6, single ? 2.0 : 3.2, rx, zc, 5);
+      }
+      k.inst(roundedBox(1.5, 0.03, 0.74, 0.01), P.desk, topL, 0.75, 5);
+      k.inst(roundedBox(0.04, 0.7, 0.66, 0.008), P.leg, legL, 0.72, 5, { ns: 1 });
+      k.inst(roundedBox(0.56, 0.33, 0.025, 0.006), M.blackGlass, monL, 1.2, 5, { ns: 1 });
+      k.inst(roundedBox(0.05, 0.16, 0.05, 0.008), M.blackMetal, standL, 0.9, 5, { ns: 1 });
+      k.inst(roundedBox(1.52, 0.42, 0.035, 0.012), P.screen, scrL, 1.15, 5, { ns: 1 });
+      if (lampL.length) k.inst(geo("dlamp", function () { return new T.CylinderGeometry(0.05, 0.07, 0.07, 16); }), M.brass, lampL, 0.85, 6, { ns: 1 });
+    }
+    // a small office still gets a meeting table and a storage/tea point along the back wall
+    if (!rd) {
+      var mtx = Math.min(1.7, W * 0.22), mtz = 1.7;
+      k.cyl(0.55, 0.55, 0.035, P.desk, mtx, 0.72, mtz, 5, { seg: 40 }); k.cyl(0.03, 0.03, 0.72, M.blackMetal, mtx, 0, mtz, 5, { ns: 1, seg: 10 }); k.cyl(0.25, 0.25, 0.02, M.blackMetal, mtx, 0, mtz, 5, { ns: 1 });
+      for (var mc = 0; mc < 4; mc++) { var ma = mc * Math.PI / 2 + Math.PI / 4; chair(mtx + Math.sin(ma) * 0.85, mtz + Math.cos(ma) * 0.85, ma + Math.PI); }
+      k.blob(1.8, 1.8, mtx, mtz, 5);
+      k.pendant(mtx, mtz, H, 1.1, f === 0 ? "dome" : P.pend, P.pendMat, 5);
+      var cl = Math.min(3.2, W - mtx - 2.2), ccx = W - 0.4 - cl / 2;
+      if (cl > 1) { k.box(cl, 0.86, 0.5, P.kit, ccx, 0.02, 0.27, 3, { r: 0.006 }); k.box(cl + 0.02, 0.04, 0.52, P.ktop, ccx, 0.88, 0.27, 3); k.box(0.5, 0.06, 0.4, M.blackMetal, ccx - cl / 4, 0.92, 0.25, 4); k.box(0.35, 0.4, 0.4, M.steel, ccx + cl / 4, 0.92, 0.25, 4, { r: 0.02 }); }
+    }
+    // all chairs (desks, meeting rooms, reception) as four instanced parts
+    k.inst(roundedBox(0.48, 0.07, 0.46, 0.03), P.chair, seatL, 0.5, 6);
+    k.inst(roundedBox(0.44, 0.42, 0.05, 0.03), P.chair, backL, 0.95, 6);
+    k.inst(geo("cstem", function () { return new T.CylinderGeometry(0.025, 0.025, 0.36, 10).translate(0, 0.18, 0); }), M.blackMetal, stemL, 0.42, 6, { ns: 1 });
+    k.inst(geo("cbase", function () { return new T.CylinderGeometry(0.27, 0.27, 0.03, 20); }), M.blackMetal, baseL, 0.06, 6, { ns: 1 });
+
+    // planting: corners and along the glazing, more with each finish level
+    var pots = [[W - 0.5, D - 0.6], [W - 0.5, rd + 0.6]];
+    if (f >= 1) for (var px = W - 3.5; px > recX + recW / 2 + 1.2 && pots.length < 8; px -= big ? 4.5 : 3) if (!big || px > wx0) pots.push([px, D - 0.55]);
+    if (!kw) pots.push([0.5, D - 0.6]);
+    pots.forEach(function (p, i2) { k.pot(p[0], p[1], 0.22 + (i2 % 2) * 0.05, 0.5, P.pot, 6, true); });
   };
 
-  // sloping block: an earth bank with a sleeper retaining wall behind the work
+  // sloping block: a grassed bank behind the work with a sleeper retaining wall
   function slope(k, bb) {
     var M = k.M, w = (bb.max.x - bb.min.x) + 6, cx = (bb.max.x + bb.min.x) / 2, z = bb.min.z - 1.2;
-    var bank = k.box(w, 0.4, 7, M.ground, cx, -0.2, z - 3.3, -1); bank.rotation.x = 0.32; bank.position.y = 0.9;
-    k.box(w, 1.1, 0.18, M.timber, cx, 0, z, -1);
+    var bank = k.box(w, 0.4, 7, M.ground, cx, -0.2, z - 3.3, -1); bank.rotation.x = 0.32; bank.position.y = 0.9; bank.userData.ty = 0.9;
+    for (var i = 0; i < 4; i++) k.box(w, 0.25, 0.16, M.spottedGum, cx, i * 0.26, z, -1);
   }
 
   /* ---------------- Studio (renderer, camera, animation) ---------------- */
@@ -1047,7 +1393,7 @@ window.__loadStudio = function () {
     var r = this.renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     r.setPixelRatio(Math.min(window.devicePixelRatio || 1, small ? 1.75 : 2));
     r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
-    r.outputEncoding = T.sRGBEncoding; r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = 0.92; r.physicallyCorrectLights = false;
+    r.outputEncoding = T.sRGBEncoding; r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = 0.95; r.physicallyCorrectLights = false;
     r.setClearColor(0x000000, 0);   // transparent: the render sits straight on the page
     this.canvas = canvas;
     var sc = this.scene = new T.Scene();
@@ -1066,9 +1412,10 @@ window.__loadStudio = function () {
     eb(al(17), [14.904, 12.198, -1.832], 0, [0.15, 4.265, 6.331]); eb(al(43), [-0.462, 8.89, 14.52], 0, [4.38, 5.441, 0.088]);
     eb(al(20), [3.235, 11.486, -12.541], 0, [2.5, 2.0, 0.1]); eb(al(100), [0, 20, 0], 0, [1.0, 0.1, 1.0]);
     var pm = new T.PMREMGenerator(r); sc.environment = pm.fromScene(env, 0.04).texture; pm.dispose();
-    sc.add(new T.HemisphereLight(0xe6e8ea, 0x9c968a, 0.35));
-    var sun = this.sun = new T.DirectionalLight(0xfff1dc, 1.9);
-    sun.castShadow = true; var ms = small ? 1024 : 2048; sun.shadow.mapSize.set(ms, ms); sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.02; sun.shadow.radius = 5;
+    sc.add(new T.HemisphereLight(0xeef0f2, 0xa49c8c, 0.3));
+    // warm, late-afternoon key light for long soft shadows
+    var sun = this.sun = new T.DirectionalLight(0xffe7cc, 2.1);
+    sun.castShadow = true; var ms = small ? 1024 : 2048; sun.shadow.mapSize.set(ms, ms); sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.025; sun.shadow.radius = 4;
     sc.add(sun); sc.add(sun.target);
     this.M = makeMaterials(r);
     var ground = new T.Mesh(new T.PlaneGeometry(400, 400), new T.ShadowMaterial({ opacity: 0.22 }));   // shadow catcher
@@ -1092,44 +1439,49 @@ window.__loadStudio = function () {
 
   Studio.prototype.resize = function () {
     var b = this.canvas.getBoundingClientRect(), w = Math.max(1, b.width), h = Math.max(1, b.height);
-    this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.setViewOffset(w, h, 0, h * 0.05, w, h); this.cam.updateProjectionMatrix(); this.aspect = w / h;
+    // when the canvas is wider than its column, keep the model centred on the column, not the canvas
+    var pb = this.canvas.parentNode.getBoundingClientRect(), dx = (pb.left + pb.width / 2) - (b.left + b.width / 2);
+    this.colAspect = Math.max(0.3, Math.min(w, pb.width || w) / h);
+    this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.setViewOffset(w, h, -dx, h * 0.05, w, h); this.cam.updateProjectionMatrix(); this.aspect = w / h;
   };
 
   Studio.prototype.set = function (s, fi, anim) {
-    if (this.kit) { this.pivot.remove(this.kit.g); }
-    if (GEOn > 700) clearGeo();
+    if (this.kit) { this.pivot.remove(this.kit.g); this.kit.parts.forEach(function (m) { if (m.isInstancedMesh && m.dispose) m.dispose(); }); }
+    if (GEOn > 900) clearGeo();
     var k = new Kit(this.M);
     B[s.p](k, s, fi, s.area || 0);
     this.interior = s.p === "bathroom" || s.p === "kitchen";
-    // final-state bounds, then centre the model on the pivot
-    var bb = new T.Box3();
-    k.parts.forEach(function (m) { m.updateMatrixWorld(true); bb.expandByObject(m); });
-    if (s.tricky && s.p !== "fitout" && !this.interior) slope(k, bb);
-    var c = bb.getCenter(new T.Vector3()), size = bb.getSize(new T.Vector3());
+    // final-state bounds (ignoring landscaping for framing), then centre the model on the pivot
+    var bb = new T.Box3(), core = new T.Box3();
+    k.parts.forEach(function (m) { m.updateMatrixWorld(true); bb.expandByObject(m); if (m.userData.stage < 6 && m.material !== k.M.blob) core.expandByObject(m); });
+    if (core.isEmpty()) core.copy(bb);
+    if (s.tricky && s.p !== "fitout" && !this.interior) slope(k, core);
+    var c = core.getCenter(new T.Vector3()), size = core.getSize(new T.Vector3());
     if (this.extraGeo) this.extraGeo.forEach(function (g) { g.dispose(); });
     var M2 = this.M, span = Math.max(size.x, size.z);
     var cs = new T.Mesh(new T.PlaneGeometry(size.x * 1.25 + 1, size.z * 1.25 + 1), M2.contact); cs.rotation.x = -Math.PI / 2; cs.position.set(c.x, 0.004, c.z); cs.renderOrder = 1; k.g.add(cs);
     var lw = null;
-    if (!this.interior) { lw = new T.Mesh(new T.CircleGeometry(span * 0.95, 64), M2.lawn); lw.rotation.x = -Math.PI / 2; lw.position.set(c.x, 0.002, c.z); lw.receiveShadow = true; k.g.add(lw); }
+    if (!this.interior) { lw = new T.Mesh(new T.CircleGeometry(span * 1.15, 64), M2.lawn); lw.rotation.x = -Math.PI / 2; lw.position.set(c.x, 0.002, c.z); lw.receiveShadow = false; k.g.add(lw); }
     this.extraGeo = [cs.geometry]; if (lw) this.extraGeo.push(lw.geometry);
     k.g.position.set(-c.x, 0, -c.z);
     this.pivot.add(k.g); this.kit = k;
-    var R = 0.5 * size.length();
+    var R = 0.5 * size.length() * (this.interior ? 1 : 1.08);
+    if (s.p === "fitout") R = Math.min(R, 15);   // big floors run past the edges instead of shrinking the furniture
     this.R = R; this.want.ty = Math.max(0.4, c.y * 0.6);
     this.fit();
     if (!this.cur) this.cur = { dist: this.want.dist, ty: this.want.ty };
     if (this.interior && (this.yaw > -0.1 || this.yaw < -1.3)) this.yaw = -0.62;
     // sun follows the scale of the model
-    var dir = new T.Vector3(-9, 15, 9).normalize();
-    this.sun.position.copy(dir.multiplyScalar(R * 2.6)); this.sun.target.position.set(0, 0, 0);
-    var sh = this.sun.shadow.camera; sh.left = -R * 1.25; sh.right = R * 1.25; sh.top = R * 1.25; sh.bottom = -R * 1.25; sh.near = 0.5; sh.far = R * 6; sh.updateProjectionMatrix();
+    var dir = new T.Vector3(-10, 12, 9).normalize(), RR = 0.5 * bb.getSize(new T.Vector3()).length();
+    this.sun.position.copy(dir.multiplyScalar(RR * 2.6)); this.sun.target.position.set(0, 0, 0);
+    var sh = this.sun.shadow.camera; sh.left = -RR * 1.15; sh.right = RR * 1.15; sh.top = RR * 1.15; sh.bottom = -RR * 1.15; sh.near = 0.5; sh.far = RR * 6; sh.updateProjectionMatrix();
     // staged build timing, like the homepage house
     var hasDemo = k.parts.some(function (m) { return m.userData.demo; }), off = hasDemo ? 1100 : 0;
     k.parts.forEach(function (m) {
       var u = m.userData;
       if (u.demo) { u.t0 = 250; u.t1 = 1050; return; }
       if (u.stage < 0) { u.t0 = u.t1 = -1; return; }
-      u.t0 = off + u.stage * 340 + Math.min(u.i * 9, 260); u.t1 = u.t0 + 560;
+      u.t0 = off + u.stage * 300 + Math.min(u.i * 6, 260); u.t1 = u.t0 + 560;
     });
     this.anim = !!anim && !reduce; this.t0 = performance.now();
     this.apply(this.anim ? 0 : 1e9);
@@ -1137,8 +1489,9 @@ window.__loadStudio = function () {
   };
 
   Studio.prototype.fit = function () {
-    var vf = this.cam.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * this.aspect);
-    var f = Math.min(vf, hf) * (this.interior ? 0.9 : 1.02);
+    // framed big: the model fills its column and runs past the edges, where the page's soft masks fade it out
+    var vf = this.cam.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * (this.colAspect || this.aspect));
+    var narrow = (this.colAspect || this.aspect) < 1, f = Math.min(vf, hf) * (this.interior ? (narrow ? 1.05 : 1.1) : (narrow ? 1.18 : 1.38));
     this.want.dist = (this.R || 10) / Math.sin(f / 2);
   };
 
@@ -1151,12 +1504,12 @@ window.__loadStudio = function () {
       var lp = (ms - u.t0) / (u.t1 - u.t0);
       if (u.demo) {
         var e = smooth(lp); if (lp >= 1) { m.visible = false; continue; }
-        m.visible = true; m.scale.y = Math.max(0.0001, 1 - e); m.position.y = u.base ? u.ty : u.ty - (u.h / 2) * e; done = false; continue;
+        m.visible = true; m.scale.y = Math.max(0.0001, u.sy * (1 - e)); m.position.y = u.base ? u.ty : u.ty - (u.h / 2) * e; done = false; continue;
       }
       if (lp <= 0) { m.visible = false; done = false; continue; }
       m.visible = true;
-      if (lp >= 1) { m.scale.y = 1; m.position.y = u.ty; continue; }
-      var s = 0.0001 + 0.9999 * smooth(lp); m.scale.y = s; m.position.y = u.base ? u.ty : u.ty - (u.h / 2) * (1 - s); done = false;
+      if (lp >= 1) { m.scale.y = u.sy; m.position.y = u.ty; continue; }
+      var s = 0.0001 + 0.9999 * smooth(lp); m.scale.y = u.sy * s; m.position.y = u.base ? u.ty : u.ty - (u.h / 2) * (1 - s); done = false;
     }
     return done;
   };
@@ -1178,7 +1531,7 @@ window.__loadStudio = function () {
     var yaw = this.yaw;
     if (this.interior) { if (!reduce) yaw += Math.sin(this.timeOff * 0.35) * 0.32; yaw = Math.max(-1.35, Math.min(-0.05, yaw)); }
     this.pivot.rotation.y = yaw;
-    var el = this.interior ? 0.6 : 0.4, d = this.cur.dist;
+    var el = this.interior ? 0.6 : 0.38, d = this.cur.dist;
     this.cam.position.set(0, this.cur.ty + Math.sin(el) * d, Math.cos(el) * d);
     this.cam.lookAt(0, this.cur.ty, 0);
     var built = this.apply(this.anim ? now - this.t0 : 1e9);
@@ -1202,8 +1555,8 @@ window.__loadStudio = function () {
   var EMAIL = "info@smithandturnerconstruction.com.au";
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var P = {
-    bathroom:{c:"BTH",t:"Bathroom",mode:"size",sizes:[["S","Ensuite"],["M","Main"],["L","Master"]],older:true,layout:true},
-    kitchen:{c:"KIT",t:"Kitchen",mode:"size",sizes:[["S","Galley"],["M","Standard"],["L","Island"]],older:true,layout:true},
+    bathroom:{c:"BTH",t:"Bathroom",mode:"area",min:4,max:15,def:6,step:1,older:true,layout:true},
+    kitchen:{c:"KIT",t:"Kitchen",mode:"area",min:6,max:30,def:12,step:1,older:true,layout:true},
     extension:{c:"EXT",t:"Extension",mode:"area",min:10,max:100,def:30,step:5,older:true},
     storey:{c:"STY",t:"Second storey",mode:"area",min:40,max:160,def:70,step:5,older:true},
     granny:{c:"GRN",t:"Granny flat",mode:"area",min:30,max:60,def:60,step:5},
