@@ -227,28 +227,6 @@ html, body { overflow-x: clip; }
 }
 
 /* ================= ANIMATED SCROLL CUE (mouse + wheel + chevron) ========= */
-.hero-chapter {
-  position: absolute; z-index: 4;
-  right: clamp(1.25rem, 5vw, 3.5rem); bottom: clamp(18px, 5vh, 52px);
-  display: flex; flex-direction: column; align-items: flex-end; gap: 7px;
-  text-align: right; pointer-events: none; max-width: min(34ch, 42vw);
-  transition: opacity .34s ease, transform .34s ease;
-}
-.hero-chapter__k {
-  font-family: "Space Mono", monospace; font-size: clamp(8px, 1vw, 10px);
-  letter-spacing: .26em; text-transform: uppercase;
-  color: rgba(255,255,255,.76); display: flex; flex-direction: row-reverse;
-  align-items: center; gap: .7em;
-  text-shadow: 0 1px 8px rgba(0,0,0,.55);
-}
-.hero-chapter__k::before { content: ""; width: 1.5rem; height: 1px; background: rgba(255,255,255,.5); }
-.hero-chapter__t {
-  font-family: "Archivo", sans-serif; font-weight: 800; text-transform: uppercase;
-  font-size: clamp(.9rem, .55rem + 1vw, 1.42rem); letter-spacing: -.01em; line-height: 1.06;
-  color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,.55); text-wrap: balance;
-}
-.hero-chapter.is-swap { opacity: 0; transform: translateY(7px); }
-@media (max-height: 620px), (max-width: 760px) { .hero-chapter { display: none; } }
 .hero-scroll {
   position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
   bottom: clamp(14px, 3svh, 30px);
@@ -344,10 +322,6 @@ html, body { overflow-x: clip; }
 <span class="hero-prog__lbl">Scroll to explore</span>
 </div>
 
-<div class="hero-chapter" aria-hidden="true">
-<span class="hero-chapter__k">Site works</span>
-<span class="hero-chapter__t">Set out and cut to level.</span>
-</div>
 
 <div class="hero-scroll" aria-hidden="true">
 <span class="hero-scroll__mouse"><span class="hero-scroll__wheel"></span></span>
@@ -1998,39 +1972,6 @@ if (!window.THREE) {
     /* the scene returns true while plant is on site and moving: keep feeding
        it frames then, otherwise idle on the dirty flag so nothing burns. */
     var liveAnim = false;
-    /* chapter captions, swapped as the build moves through its stages */
-    /* These marks are read against the RAW scroll fraction, but the scene is
-       driven by that fraction raised to ACCEL. A caption at 0.64 was landing
-       on build progress 0.57 - calling the envelope while the frame was still
-       open. Each mark below is the scroll position that actually corresponds
-       to its stage: b = p^(1/ACCEL). */
-    var CHAPTERS = [
-      [0.00, 'Site works',  'Set out and cut to level.'],
-      [0.17, 'Footings',    'Poured, levelled, cured.'],
-      [0.35, 'Structure',   'Framed, plumbed and squared.'],
-      [0.50, 'Upper floor', 'Second level set.'],
-      [0.70, 'Envelope',    'Sealed against the weather.'],
-      [0.86, 'Glazing',     'Light brought in.'],
-      [0.93, 'Handover',    'Signed off, keys across.']
-    ];
-    var chapEl = document.querySelector('.hero-chapter');
-    var chapK  = document.querySelector('.hero-chapter__k');
-    var chapT  = document.querySelector('.hero-chapter__t');
-    var lastChap = 0, chapTimer = 0;
-    function setChapter(b) {
-      if (!chapEl || !chapK || !chapT) return;
-      var ci = 0;
-      for (var i = 0; i < CHAPTERS.length; i++) if (b >= CHAPTERS[i][0]) ci = i;
-      if (ci === lastChap) return;
-      lastChap = ci;
-      var c = CHAPTERS[ci];
-      chapEl.classList.add('is-swap');
-      clearTimeout(chapTimer);
-      chapTimer = setTimeout(function () {
-        chapK.textContent = c[1]; chapT.textContent = c[2];
-        chapEl.classList.remove('is-swap');
-      }, 170);
-    }
     var lastPct = -1, vTick = 0;
     function loop() {
       requestAnimationFrame(loop);
@@ -2055,7 +1996,6 @@ if (!window.THREE) {
       // swings through midday and washes the render out to milky grey. A small
       // value keeps the sun low and warm: one continuous golden-hour dusk.
       liveAnim = (scene.render(Math.pow(b, ACCEL), DAY_CYCLES) === true);
-      setChapter(b);
 
       // wording holds its opacity throughout; only a whisper of settle
       if (copy) {
